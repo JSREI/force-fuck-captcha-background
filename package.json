@@ -43,9 +43,13 @@
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "antd": "^5.25.1",
+    "electron-log": "^5.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.6.0"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.2"
   },
   "build": {
     "appId": "com.jsrei.captcha.helper",
