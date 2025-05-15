@@ -1,0 +1,43 @@
+.curl-parser-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.curl-input {
+  font-family: 'Courier New', Courier, monospace;
+  margin-bottom: 16px;
+}
+
+.help-section {
+  margin-top: 12px;
+  color: #666;
+}
+
+.help-section p {
+  margin-bottom: 8px;
+}
+
+.help-section ul {
+  padding-left: 20px;
+}
+
+.help-section li {
+  margin-bottom: 4px;
+}
+
+.shortcut-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #1890ff;
+  text-align: right;
+  font-style: italic;
+}
+
+.curl-parser-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.curl-parser-button {
+  margin-left: 8px;
+} 

@@ -1,0 +1,49 @@
+.headers-table {
+  width: 100%;
+}
+
+.headers-table .ant-table-wrapper {
+  margin-bottom: 0;
+}
+
+.headers-table .table-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.headers-table .ant-btn-dashed {
+  margin-top: 8px;
+}
+
+.header-key-input, .header-value-input {
+  width: 100%;
+}
+
+.header-action-button {
+  margin: 0 4px;
+}
+
+/* 让表格行更加紧凑 */
+.headers-table .ant-table-tbody > tr > td {
+  padding: 4px 8px;
+}
+
+.headers-table .ant-table-thead > tr > th {
+  padding: 8px;
+}
+
+.headers-table .ant-input {
+  padding: 4px 8px;
+  height: 28px;
+}
+
+.headers-table .ant-btn {
+  height: 28px;
+  padding: 0px 8px;
+}
+
+/* 减少表格整体的边距 */
+.headers-table .ant-table {
+  margin: 0;
+  padding: 0;
+} 

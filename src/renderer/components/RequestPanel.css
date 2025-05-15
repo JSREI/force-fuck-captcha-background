@@ -1,0 +1,46 @@
+.request-panel {
+  margin-bottom: 16px;
+}
+
+.request-panel-row {
+  display: flex;
+  align-items: center;
+}
+
+.method-select {
+  width: 100%;
+}
+
+.url-input {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.send-button, .import-curl-button, .reset-button {
+  border-radius: 4px;
+}
+
+.reset-button {
+  padding: 4px 10px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.request-form {
+  margin-top: 16px;
+}
+
+.request-divider {
+  margin: 16px 0;
+}
+
+.request-body-section {
+  margin-top: 16px;
+} 
