@@ -3,10 +3,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { CaptchaRequestHandler } from './request-handler';
 import { CaptchaImageProcessor } from './image-processor';
-import { CaptchaRequestConfig, CaptchaImage, CaptchaGroup, ProcessingStatus } from './types';
+import { CaptchaRequestConfig, CaptchaImage, ProcessingStatus, BackgroundImageBucket } from './types';
+import { backgroundProcessor } from './image-processor';
 
 // 导出类型定义
 export * from './types';
+export * from './request-handler';
+export * from './image-processor';
 
 /**
  * 验证码处理器主类
@@ -17,7 +20,7 @@ export class CaptchaProcessor {
   private downloadDirectory: string;
   private isProcessing: boolean = false;
   private captchaImages: CaptchaImage[] = [];
-  private captchaGroups: CaptchaGroup[] = [];
+  private imageBuckets: Map<string, BackgroundImageBucket> = new Map();
 
   /**
    * 构造函数
@@ -66,9 +69,14 @@ export class CaptchaProcessor {
       }));
     });
 
-    // 获取验证码分组列表
-    ipcMain.handle('get-captcha-groups', async (event) => {
-      return this.captchaGroups;
+    // 获取背景图片桶列表
+    ipcMain.handle('get-background-buckets', async (event) => {
+      return Array.from(this.imageBuckets.values()).map(bucket => ({
+        id: bucket.id,
+        imageCount: bucket.imageCount,
+        isCompleted: bucket.isCompleted,
+        finalImagePath: bucket.finalImagePath
+      }));
     });
   }
 
@@ -84,7 +92,7 @@ export class CaptchaProcessor {
     try {
       this.isProcessing = true;
       this.captchaImages = [];
-      this.captchaGroups = [];
+      this.imageBuckets.clear();
 
       // 1. 批量发送请求并下载验证码图片
       await this.requestHandler.startProcessing(config);
@@ -93,15 +101,15 @@ export class CaptchaProcessor {
       this.captchaImages = this.requestHandler.getCaptchaImages();
 
       // 3. 处理每张图片，提取四个角落的像素
-      for (let i = 0; i < this.captchaImages.length; i++) {
-        const processedImage = await this.imageProcessor.processImage(this.captchaImages[i]);
-        this.captchaImages[i] = processedImage;
+      for (const image of this.captchaImages) {
+        if (image.localPath) {
+          const imageBuffer = fs.readFileSync(image.localPath);
+          await backgroundProcessor.processImage(imageBuffer);
+        }
       }
 
-      // 4. 对图片进行分组
-      this.captchaGroups = this.imageProcessor.groupImages(this.captchaImages);
-
-      // 5. 预留：这里将来会实现投票算法
+      // 4. 获取处理后的桶
+      this.imageBuckets = backgroundProcessor.getState().buckets;
 
       this.isProcessing = false;
       return { success: true };
@@ -131,13 +139,13 @@ export class CaptchaProcessor {
   /**
    * 获取当前处理状态
    */
-  public getStatus(): ProcessingStatus & { isProcessing: boolean, imageCount: number, groupCount: number } {
+  public getStatus(): ProcessingStatus & { isProcessing: boolean, imageCount: number, bucketCount: number } {
     const status = this.requestHandler.getStatus();
     return {
       ...status,
       isProcessing: this.isProcessing,
       imageCount: this.captchaImages.length,
-      groupCount: this.captchaGroups.length
+      bucketCount: this.imageBuckets.size
     };
   }
 
@@ -165,4 +173,8 @@ export function setupCaptchaProcessor(): CaptchaProcessor {
   const processor = new CaptchaProcessor();
   processor.setupIpcHandlers();
   return processor;
-} 
+}
+
+// 导出默认实例
+import { BackgroundImageProcessor } from './image-processor';
+export const backgroundProcessor = new BackgroundImageProcessor(); 
