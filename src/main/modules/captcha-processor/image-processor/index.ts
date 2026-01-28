@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import { app } from 'electron';
 import * as path from 'path';
-import { createCanvas, loadImage } from 'canvas';
-import { CaptchaImage, BackgroundProcessorState } from '../types';
+import sharp from 'sharp';
+import { CaptchaImage, BackgroundProcessorState, BackgroundImageBucket } from '../types';
 import { logger } from '../../logger';
 import { CornerExtractor } from './corner-extractor';
 import { BucketManager } from './bucket-manager';
@@ -11,7 +11,13 @@ import { ImageGenerator } from './image-generator';
 /**
  * 验证码图像处理类
  */
-export class CaptchaImageProcessor {
+class CaptchaImageProcessor {
+  private cornerExtractor: CornerExtractor;
+
+  constructor() {
+    this.cornerExtractor = new CornerExtractor();
+  }
+
   /**
    * 处理图像，提取四个角落的像素点
    */
@@ -22,7 +28,7 @@ export class CaptchaImageProcessor {
       }
 
       // 提取四个角落的像素
-      const cornerPixels = await CornerExtractor.extractCornerPixels(captchaImage.localPath);
+      const cornerPixels = await this.cornerExtractor.extractCornerPixels(captchaImage.localPath);
       captchaImage.cornerPixels = cornerPixels;
 
       // 基于四个角落像素创建唯一ID
@@ -54,105 +60,165 @@ export class CaptchaImageProcessor {
     // 创建一个简单的哈希
     return pixelValues.join('_');
   }
+
+  /**
+   * 从图片中提取四个角落的像素值
+   * @param imageBuffer 图片数据
+   * @returns 四个角落的像素值
+   */
+  public async extractCornerPixels(imageBuffer: Buffer): Promise<number[][]> {
+    try {
+      const image = sharp(imageBuffer);
+      const metadata = await image.metadata();
+      
+      if (!metadata.width || !metadata.height) {
+        throw new Error('无法获取图片尺寸');
+      }
+      
+      const width = metadata.width;
+      const height = metadata.height;
+      
+      const coordinates = [
+        { x: 0, y: 0 },                // 左上角
+        { x: width - 1, y: 0 },        // 右上角
+        { x: 0, y: height - 1 },       // 左下角
+        { x: width - 1, y: height - 1} // 右下角
+      ];
+      
+      const pixels: number[][] = [];
+      
+      for (const coord of coordinates) {
+        const extracted = await image
+          .extract({ left: coord.x, top: coord.y, width: 1, height: 1 })
+          .raw()
+          .toBuffer();
+        
+        pixels.push([extracted[0], extracted[1], extracted[2]]);
+      }
+      
+      return pixels;
+    } catch (error) {
+      logger.error('提取图片角落像素失败:', error);
+      throw error;
+    }
+  }
 }
 
 /**
  * 背景图片处理器
  */
-export class BackgroundImageProcessor {
-  private state: BackgroundProcessorState;
-  private readonly outputDirectory: string;
+class BackgroundImageProcessor {
+  private bucketManager: BucketManager;
+  private imageGenerator: ImageGenerator;
+  private outputDirectory: string;
+  private startTime: number;
+  private processedImageCount: number;
+  private consecutiveNoNewBucketCount: number;
+  private isCompleted: boolean;
 
   constructor() {
-    // 初始化处理器状态
-    this.state = {
-      buckets: new Map(),
-      consecutiveNoNewBucketCount: 0,
-      isCompleted: false,
-      startTime: Date.now(),
-      processedImageCount: 0
-    };
-
-    // 设置输出目录（在用户数据目录下的background-images文件夹）
+    this.bucketManager = new BucketManager();
+    this.imageGenerator = new ImageGenerator();
     this.outputDirectory = path.join(app.getPath('userData'), 'background-images');
+    this.startTime = Date.now();
+    this.processedImageCount = 0;
+    this.consecutiveNoNewBucketCount = 0;
+    this.isCompleted = false;
+    
     // 确保输出目录存在
     if (!fs.existsSync(this.outputDirectory)) {
       fs.mkdirSync(this.outputDirectory, { recursive: true });
-      logger.info(`创建背景图片输出目录: ${this.outputDirectory}`);
     }
   }
 
   /**
-   * 处理一张新的背景图片
+   * 处理新的图片
+   * @param imageBuffer 图片数据
    */
   public async processImage(imageBuffer: Buffer): Promise<void> {
     try {
-      // 加载图片到Canvas中以便处理像素数据
-      const image = await loadImage(imageBuffer);
-      const canvas = createCanvas(image.width, image.height);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(image, 0, 0);
-      const imageData = ctx.getImageData(0, 0, image.width, image.height);
-
-      // 生成桶ID（基于四个角落的像素值）
-      const bucketId = BucketManager.generateBucketId(imageData);
+      const image = sharp(imageBuffer);
+      const metadata = await image.metadata();
       
-      // 获取或创建桶
-      let bucket = this.state.buckets.get(bucketId);
-      if (!bucket) {
-        logger.info(`发现新的背景图片桶: ${bucketId}`);
-        this.state.consecutiveNoNewBucketCount = 0;
-        bucket = BucketManager.createBucket(bucketId, image.width, image.height);
-        this.state.buckets.set(bucketId, bucket);
-      } else {
-        this.state.consecutiveNoNewBucketCount++;
+      if (!metadata.width || !metadata.height) {
+        throw new Error('无法获取图片尺寸');
       }
-
-      // 处理图片像素（进行投票）
-      BucketManager.processPixels(bucket, imageData);
-      bucket.imageCount++;
-      this.state.processedImageCount++;
-
-      // 检查桶是否完成投票
-      if (!bucket.isCompleted && BucketManager.checkBucketCompletion(bucket)) {
-        bucket.isCompleted = true;
-        await ImageGenerator.generateAndSaveImage(bucket, this.outputDirectory);
-        logger.info(`背景图片桶 ${bucketId} 完成处理，共处理 ${bucket.imageCount} 张图片`);
+      
+      const { data, info } = await image
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+        
+      // 处理图片数据
+      await this.bucketManager.processImageData({
+        data: new Uint8ClampedArray(data),
+        width: info.width,
+        height: info.height
+      });
+      
+      // 检查是否有完成的桶，生成最终图片
+      const completedBuckets = this.bucketManager.getCompletedBuckets();
+      for (const bucket of completedBuckets) {
+        if (!bucket.finalImagePath) {
+          const { width, height } = bucket;
+          const imageData = {
+            data: new Uint8ClampedArray(width * height * 4),
+            width,
+            height
+          };
+          
+          this.imageGenerator.generateFinalImage(bucket.votes, imageData);
+          
+          // 保存图片
+          const timestamp = Date.now();
+          const bucketId = bucket.id.replace(/\|/g, '_');
+          const filename = `background_${bucketId}_${timestamp}.png`;
+          const outputPath = path.join(this.outputDirectory, filename);
+          
+          // 将图片数据保存为文件
+          await sharp(imageData.data, {
+            raw: {
+              width: imageData.width,
+              height: imageData.height,
+              channels: 4
+            }
+          })
+          .png()
+          .toFile(outputPath);
+          
+          // 更新桶的最终图片路径
+          bucket.finalImagePath = outputPath;
+          logger.info(`背景图片已保存到: ${outputPath}`);
+        }
       }
-
-      // 检查整体处理是否完成
-      if (BucketManager.checkOverallCompletion(this.state)) {
-        this.state.isCompleted = true;
-      }
-
     } catch (error) {
-      logger.error('处理背景图片失败:', error);
+      logger.error('处理图片失败:', error);
       throw error;
     }
   }
 
   /**
-   * 获取处理状态
+   * 获取当前状态
    */
   public getState(): BackgroundProcessorState {
-    return this.state;
+    return {
+      buckets: this.bucketManager.getBuckets(),
+      consecutiveNoNewBucketCount: this.consecutiveNoNewBucketCount,
+      isCompleted: this.isCompleted,
+      startTime: this.startTime,
+      processedImageCount: this.processedImageCount
+    };
   }
 
   /**
-   * 获取已完成的背景图片信息
+   * 获取已完成的背景图片列表
    */
-  public getCompletedBackgrounds(): { bucketId: string, imageBuffer: Buffer, imagePath: string }[] {
-    const results: { bucketId: string, imageBuffer: Buffer, imagePath: string }[] = [];
-    for (const [bucketId, bucket] of this.state.buckets) {
-      if (bucket.isCompleted && bucket.finalImage && bucket.finalImagePath) {
-        results.push({
-          bucketId,
-          imageBuffer: bucket.finalImage,
-          imagePath: bucket.finalImagePath
-        });
-      }
-    }
-    return results;
+  public getCompletedBackgrounds(): { id: string; imagePath: string }[] {
+    return this.bucketManager.getCompletedBuckets()
+      .map(bucket => ({
+        id: bucket.id,
+        imagePath: bucket.finalImagePath || ''
+      }))
+      .filter(bg => bg.imagePath !== '');
   }
 
   /**
@@ -161,7 +227,21 @@ export class BackgroundImageProcessor {
   public getOutputDirectory(): string {
     return this.outputDirectory;
   }
+
+  /**
+   * 获取所有桶
+   */
+  public getBuckets(): Map<string, BackgroundImageBucket> {
+    return this.bucketManager.getBuckets();
+  }
+
+  /**
+   * 获取已完成的桶
+   */
+  public getCompletedBuckets(): BackgroundImageBucket[] {
+    return this.bucketManager.getCompletedBuckets();
+  }
 }
 
-// 导出默认的背景图片处理器实例
-export const backgroundProcessor = new BackgroundImageProcessor(); 
+// 导出类
+export { CaptchaImageProcessor, BackgroundImageProcessor }; 

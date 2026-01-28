@@ -306,7 +306,19 @@ const App: React.FC = () => {
   ];
 
   return (
-    <AppLayout>
+    <AppLayout
+      headerContent={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Button 
+            icon={<ClearOutlined />} 
+            onClick={handleReset}
+            danger
+          >
+            重置
+          </Button>
+        </div>
+      }
+    >
       <div className="main-container">
         {/* 请求区域 */}
         <div className="request-area">

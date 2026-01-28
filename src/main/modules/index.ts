@@ -4,4 +4,5 @@ export * from './http-handler';
 export * from './state-manager';
 export * from './external-link-handler';
 export * from './app-lifecycle';
-export * from './captcha-processor'; 
+export * from './captcha-processor';
+export { settingsManager } from './settings-manager'; 

@@ -1,4 +1,4 @@
-import { BackgroundImageBucket, PixelVoteState, BackgroundProcessorState } from '../types';
+import { BackgroundImageBucket, PixelVoteState, BackgroundProcessorState, SimpleImageData } from '../types';
 import { logger } from '../../logger';
 
 /**
@@ -12,6 +12,18 @@ export class BucketManager {
   private static readonly MAX_BUCKETS = 10000;
   // 最大连续无新桶次数：连续这么多次没有新桶就停止处理
   private static readonly MAX_NO_NEW_BUCKET = 10;
+
+  private buckets: Map<string, BackgroundImageBucket>;
+  private consecutiveNoNewBucketCount: number;
+  private processedImageCount: number;
+  private startTime: number;
+
+  constructor() {
+    this.buckets = new Map();
+    this.consecutiveNoNewBucketCount = 0;
+    this.processedImageCount = 0;
+    this.startTime = Date.now();
+  }
 
   /**
    * 创建新的背景图片桶
@@ -33,7 +45,10 @@ export class BucketManager {
       width,
       height,
       pixelVotes,
-      isCompleted: false
+      votes: new Map(),
+      isCompleted: false,
+      finalImagePath: undefined,
+      finalImage: undefined
     };
   }
 
@@ -41,7 +56,7 @@ export class BucketManager {
    * 处理图片像素
    * 对每个像素位置进行投票
    */
-  public static processPixels(bucket: BackgroundImageBucket, imageData: ImageData): void {
+  public static processPixels(bucket: BackgroundImageBucket, imageData: SimpleImageData): void {
     const width = imageData.width;
     const height = imageData.height;
 
@@ -69,7 +84,7 @@ export class BucketManager {
   /**
    * 获取指定坐标的RGB值
    */
-  private static getRGBAt(imageData: ImageData, x: number, y: number) {
+  private static getRGBAt(imageData: SimpleImageData, x: number, y: number) {
     const index = (y * imageData.width + x) * 4;
     return {
       r: imageData.data[index],
@@ -123,7 +138,7 @@ export class BucketManager {
   /**
    * 生成桶ID
    */
-  public static generateBucketId(imageData: ImageData): string {
+  public static generateBucketId(imageData: SimpleImageData): string {
     const width = imageData.width;
     const height = imageData.height;
     const corners = [
@@ -133,5 +148,50 @@ export class BucketManager {
       this.getRGBAt(imageData, width - 1, height - 1)   // 右下角
     ];
     return corners.map(rgb => `${rgb.r},${rgb.g},${rgb.b}`).join('|');
+  }
+
+  /**
+   * 处理图片数据
+   * @param imageData 图片数据
+   */
+  public async processImageData(imageData: SimpleImageData): Promise<void> {
+    // 生成桶ID（基于四个角落的像素值）
+    const bucketId = BucketManager.generateBucketId(imageData);
+    
+    // 获取或创建桶
+    let bucket = this.buckets.get(bucketId);
+    if (!bucket) {
+      logger.info(`发现新的背景图片桶: ${bucketId}`);
+      this.consecutiveNoNewBucketCount = 0;
+      bucket = BucketManager.createBucket(bucketId, imageData.width, imageData.height);
+      this.buckets.set(bucketId, bucket);
+    } else {
+      this.consecutiveNoNewBucketCount++;
+    }
+
+    // 处理图片像素（进行投票）
+    BucketManager.processPixels(bucket, imageData);
+    bucket.imageCount++;
+    this.processedImageCount++;
+
+    // 检查桶是否完成投票
+    if (!bucket.isCompleted && BucketManager.checkBucketCompletion(bucket)) {
+      bucket.isCompleted = true;
+      logger.info(`背景图片桶 ${bucketId} 完成处理，共处理 ${bucket.imageCount} 张图片`);
+    }
+  }
+
+  /**
+   * 获取所有桶
+   */
+  public getBuckets(): Map<string, BackgroundImageBucket> {
+    return this.buckets;
+  }
+
+  /**
+   * 获取已完成的桶
+   */
+  public getCompletedBuckets(): BackgroundImageBucket[] {
+    return Array.from(this.buckets.values()).filter(bucket => bucket.isCompleted);
   }
 } 

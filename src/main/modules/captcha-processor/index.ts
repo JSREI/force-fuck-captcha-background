@@ -1,15 +1,17 @@
 import { ipcMain, app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { CaptchaRequestHandler } from './request-handler';
-import { CaptchaImageProcessor } from './image-processor';
+import { CaptchaRequestHandler } from './request-handler/index';
+import { CaptchaImageProcessor, BackgroundImageProcessor } from './image-processor/index';
 import { CaptchaRequestConfig, CaptchaImage, ProcessingStatus, BackgroundImageBucket } from './types';
-import { backgroundProcessor } from './image-processor';
 
 // 导出类型定义
 export * from './types';
-export * from './request-handler';
-export * from './image-processor';
+export * from './request-handler/index';
+export * from './image-processor/index';
+
+// 创建并导出 backgroundProcessor 实例
+export const backgroundProcessor = new BackgroundImageProcessor();
 
 /**
  * 验证码处理器主类
@@ -173,8 +175,4 @@ export function setupCaptchaProcessor(): CaptchaProcessor {
   const processor = new CaptchaProcessor();
   processor.setupIpcHandlers();
   return processor;
-}
-
-// 导出默认实例
-import { BackgroundImageProcessor } from './image-processor';
-export const backgroundProcessor = new BackgroundImageProcessor(); 
+} 

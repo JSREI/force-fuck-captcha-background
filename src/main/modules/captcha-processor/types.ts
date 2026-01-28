@@ -220,48 +220,10 @@ export interface PixelVoteState {
 
 /**
  * 背景图片桶
- * 用于存储具有相同四角像素的背景图片集合及其投票状态
- * 
- * 工作原理：
- * 1. 每个桶代表一种独特的背景图片
- * 2. 具有相同四角像素的图片会被归类到同一个桶
- * 3. 桶内的每个像素位置都进行投票
- * 4. 当所有像素都确定了最终颜色，就可以生成完整的背景图片
- * 
- * 示例：
- * ```typescript
- * const bucket: BackgroundImageBucket = {
- *   // 桶ID由四个角落的RGB值组成
- *   id: "255,255,255|0,0,0|128,128,128|200,200,200",
- *   imageCount: 10,    // 该桶已处理了10张图片
- *   width: 300,        // 图片宽度300像素
- *   height: 150,       // 图片高度150像素
- *   // 二维数组存储每个像素的投票状态
- *   pixelVotes: [
- *     [  // 第一行
- *       {  // (0,0)位置的投票状态
- *         x: 0,
- *         y: 0,
- *         votes: new Map([["255,255,255", 3]]),
- *         isFinalized: true,
- *         finalRGB: { r: 255, g: 255, b: 255 }
- *       },
- *       // ... 更多列
- *     ],
- *     // ... 更多行
- *   ],
- *   isCompleted: true,  // 该桶的处理已完成
- *   // 最终生成的背景图片数据
- *   finalImage: <Buffer ...>,
- *   // 背景图片保存的路径
- *   finalImagePath: "/path/to/background_123456.png"
- * };
- * ```
+ * 用于存储和处理具有相同四角像素的图片集合
  */
 export interface BackgroundImageBucket {
   // 桶ID，由四个角落的像素RGB值组合而成
-  // 格式：topLeft|topRight|bottomLeft|bottomRight
-  // 示例："255,255,255|0,0,0|128,128,128|200,200,200"
   id: string;
   // 该桶中已处理的图片数量
   imageCount: number;
@@ -270,15 +232,15 @@ export interface BackgroundImageBucket {
   // 图片高度（像素）
   height: number;
   // 每个像素位置的投票状态
-  // 使用二维数组存储，第一维是y坐标，第二维是x坐标
-  // pixelVotes[y][x] 表示(x,y)位置的投票状态
   pixelVotes: PixelVoteState[][];
-  // 是否已完成投票（所有像素都确定了最终颜色）
+  // 是否已完成投票
   isCompleted: boolean;
-  // 最终的背景图片Buffer（当isCompleted为true时有值）
-  finalImage?: Buffer;
   // 最终图片在硬盘上的保存路径
   finalImagePath?: string;
+  // 最终图片的二进制数据
+  finalImage?: Buffer;
+  // 每个像素位置的投票记录
+  votes: Map<string, Map<string, number>>;
 }
 
 /**
@@ -313,4 +275,14 @@ export interface BackgroundProcessorState {
   startTime: number;
   // 已处理的图片总数
   processedImageCount: number;
+}
+
+/**
+ * 简化的图像数据接口
+ * 用于在不同模块间传递图像数据
+ */
+export interface SimpleImageData {
+  data: Uint8ClampedArray;
+  width: number;
+  height: number;
 } 

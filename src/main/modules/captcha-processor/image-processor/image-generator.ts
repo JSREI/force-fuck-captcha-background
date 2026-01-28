@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { createCanvas } from 'canvas';
-import { BackgroundImageBucket } from '../types';
+import sharp from 'sharp';
+import { BackgroundImageBucket, SimpleImageData } from '../types';
 import { logger } from '../../logger';
 
 /**
@@ -9,6 +9,37 @@ import { logger } from '../../logger';
  * 负责将投票结果转换为最终的背景图片
  */
 export class ImageGenerator {
+  /**
+   * 生成最终图片
+   * @param votes 像素投票结果
+   * @param imageData 目标图片数据
+   */
+  public generateFinalImage(votes: Map<string, Map<string, number>>, imageData: SimpleImageData): void {
+    // 遍历每个像素位置
+    for (const [pixelIndex, colorVotes] of votes.entries()) {
+      // 找出得票最多的颜色
+      let maxVotes = 0;
+      let finalColor = '';
+      
+      for (const [color, voteCount] of colorVotes.entries()) {
+        if (voteCount > maxVotes) {
+          maxVotes = voteCount;
+          finalColor = color;
+        }
+      }
+      
+      // 如果找到了最终颜色
+      if (finalColor) {
+        const [r, g, b] = finalColor.split(',').map(Number);
+        const i = parseInt(pixelIndex) * 4;
+        imageData.data[i] = r;
+        imageData.data[i + 1] = g;
+        imageData.data[i + 2] = b;
+        imageData.data[i + 3] = 255; // alpha通道设为不透明
+      }
+    }
+  }
+
   /**
    * 生成并保存最终的背景图片
    * @param bucket 已完成投票的背景图片桶
@@ -20,10 +51,12 @@ export class ImageGenerator {
     outputDirectory: string
   ): Promise<void> {
     try {
-      // 创建Canvas并生成图片
-      const canvas = createCanvas(bucket.width, bucket.height);
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.createImageData(bucket.width, bucket.height);
+      // 创建图片数据
+      const imageData = {
+        data: new Uint8ClampedArray(bucket.width * bucket.height * 4),
+        width: bucket.width,
+        height: bucket.height
+      };
 
       // 填充像素数据
       for (let y = 0; y < bucket.height; y++) {
@@ -39,19 +72,24 @@ export class ImageGenerator {
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
-
       // 生成文件名
       const timestamp = Date.now();
       const filename = `background_${bucket.id.split('|').join('_')}_${timestamp}.png`;
       const filepath = path.join(outputDirectory, filename);
 
       // 保存图片
-      const buffer = canvas.toBuffer('image/png');
-      fs.writeFileSync(filepath, buffer);
+      await sharp(imageData.data, {
+        raw: {
+          width: imageData.width,
+          height: imageData.height,
+          channels: 4
+        }
+      })
+      .png()
+      .toFile(filepath);
 
       // 更新桶的信息
-      bucket.finalImage = buffer;
+      bucket.finalImage = Buffer.from(imageData.data);
       bucket.finalImagePath = filepath;
 
       logger.info(`背景图片已保存: ${filepath}`);

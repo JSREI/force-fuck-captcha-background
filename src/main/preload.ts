@@ -38,6 +38,13 @@ console.log('preload脚本已加载');
   
   clearAppState: async () => {
     return await ipcRenderer.invoke('clear-app-state');
+  },
+
+  // 设置管理API
+  ipcRenderer: {
+    invoke: (channel: string, ...args: any[]) => {
+      return ipcRenderer.invoke(channel, ...args);
+    }
   }
 };
 
@@ -49,6 +56,7 @@ window.addEventListener('DOMContentLoaded', () => {
   console.log('已注册electronAPI.saveAppState方法');
   console.log('已注册electronAPI.loadAppState方法');
   console.log('已注册electronAPI.clearAppState方法');
+  console.log('已注册electronAPI.ipcRenderer方法');
   
   // 给窗口添加一个可见标记，表明preload脚本已执行
   document.body.classList.add('electron-ready');
