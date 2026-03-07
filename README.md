@@ -10,7 +10,7 @@
 │   └── electron-ui/              # Electron + React 桌面界面工具
 ├── sdk/
 │   └── python/
-│       └── captcha-font-sdk/     # Python SDK（背景映射 + 字体定位）
+│       └── captcha-background-sdk/     # Python SDK（背景映射 + 字体定位）
 ├── LICENSE
 └── README.md
 ```
@@ -28,7 +28,7 @@ npm run dev
 ### 2) 使用 Python SDK
 
 ```bash
-cd sdk/python/captcha-font-sdk
+cd sdk/python/captcha-background-sdk
 pip install -r requirements.txt
 python examples/demo.py
 ```

@@ -12,7 +12,11 @@ from .background_index import (
 )
 from .component_extractor import extract_components
 from .diff_engine import build_diff
-from .font_glyph_extractor import CaptchaRgbaImage, build_font_glyphs
+from .font_glyph_extractor import (
+    CaptchaRgbaImage,
+    build_font_glyphs,
+    build_font_glyphs_from_text_regions,
+)
 from .font_glyph_features import build_font_glyph_features
 from .font_glyph_images import export_font_glyph_images
 from .font_glyph_slots import align_font_glyph_features_to_slots
@@ -29,16 +33,18 @@ from .types import (
     LocateResult,
     TextLayerResult,
     TextLocateResult,
+    GlyphRenderMode,
+    GlyphRenderModeLike,
 )
 
 
 class CaptchaFontLocator:
-    """Captcha font locator SDK.
+    """Captcha text locator SDK.
 
     Flow:
     1) Build mapping: group_id -> background image.
     2) For a captcha image, compute group_id and find matching background.
-    3) Diff captcha vs background and extract font components by color-aware flood fill.
+    3) Diff captcha vs background and extract text components by flood fill.
     """
 
     def __init__(
@@ -52,6 +58,8 @@ class CaptchaFontLocator:
         text_max_fill_ratio: float = 0.95,
         text_merge_gap: int = 2,
         text_min_vertical_overlap_ratio: float = 0.4,
+        text_expected_region_count: Optional[int] = 4,
+        text_force_merge_max_gap: int = 28,
     ) -> None:
         if connectivity not in (4, 8):
             raise ValueError("connectivity must be 4 or 8")
@@ -65,6 +73,8 @@ class CaptchaFontLocator:
             max_fill_ratio=text_max_fill_ratio,
             merge_gap=text_merge_gap,
             min_vertical_overlap_ratio=text_min_vertical_overlap_ratio,
+            expected_region_count=text_expected_region_count,
+            force_merge_max_gap=text_force_merge_max_gap,
         )
         self._backgrounds: Dict[str, BackgroundMeta] = {}
 
@@ -107,11 +117,12 @@ class CaptchaFontLocator:
             )
         return group_id, (width, height), cap_px, background_meta
 
-    def locate_fonts(
+    def _build_diff_and_components(
         self,
         captcha_path: str,
-        include_pixels: bool = True,
-    ) -> LocateResult:
+        include_pixels: bool,
+        color_sensitive: bool,
+    ) -> tuple[str, tuple[int, int], BackgroundMeta, list[bool], list]:
         gid, (w, h), cap_px, bg_meta = self._match_background_meta(captcha_path)
         bg_w, bg_h, bg_px = load_rgba_pixels(bg_meta.image_path)
         if (bg_w, bg_h) != (w, h):
@@ -128,6 +139,19 @@ class CaptchaFontLocator:
             connectivity=self.connectivity,
             min_component_pixels=self.min_component_pixels,
             include_pixels=include_pixels,
+            color_sensitive=color_sensitive,
+        )
+        return gid, (w, h), bg_meta, diff_mask, components
+
+    def locate_fonts(
+        self,
+        captcha_path: str,
+        include_pixels: bool = True,
+    ) -> LocateResult:
+        gid, (w, h), bg_meta, diff_mask, components = self._build_diff_and_components(
+            captcha_path=captcha_path,
+            include_pixels=include_pixels,
+            color_sensitive=True,
         )
 
         return LocateResult(
@@ -196,22 +220,26 @@ class CaptchaFontLocator:
         captcha_path: str,
         include_pixels: bool = True,
     ) -> TextLocateResult:
-        font_result = self.locate_fonts(captcha_path, include_pixels=include_pixels)
+        gid, (w, h), bg_meta, diff_mask, text_components = self._build_diff_and_components(
+            captcha_path=captcha_path,
+            include_pixels=include_pixels,
+            color_sensitive=False,
+        )
         regions = build_text_regions(
-            font_result.components,
+            text_components,
             include_pixels=include_pixels,
             config=self._text_region_filter,
         )
         return TextLocateResult(
-            group_id=font_result.group_id,
-            background_path=font_result.background_path,
-            image_size=font_result.image_size,
+            group_id=gid,
+            background_path=bg_meta.image_path,
+            image_size=(w, h),
             regions=regions,
             stats={
-                "component_count": len(font_result.components),
+                "component_count": len(text_components),
                 "region_count": len(regions),
                 "text_pixel_count": sum(region.pixel_count for region in regions),
-                "diff_pixels": font_result.stats["diff_pixels"],
+                "diff_pixels": sum(1 for v in diff_mask if v),
                 "diff_threshold": self.diff_threshold,
             },
         )
@@ -433,20 +461,41 @@ class CaptchaFontLocator:
         captcha_path: str,
         output_dir: str,
         file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+        use_text_regions: bool = False,
     ) -> FontGlyphImageExportResult:
-        glyph_result = self.extract_font_glyphs(
-            captcha_path=captcha_path,
-            include_pixels=False,
-            include_rgba_2d=True,
-        )
+        if use_text_regions:
+            text_result = self.locate_text_regions(captcha_path, include_pixels=True)
+            width, height, pixels = load_rgba_pixels(captcha_path)
+            captcha_image = CaptchaRgbaImage(width=width, height=height, pixels=pixels)
+            glyphs = build_font_glyphs_from_text_regions(
+                text_result.regions,
+                captcha_image=captcha_image,
+                include_pixels=False,
+                include_rgba_2d=True,
+            )
+            group_id = text_result.group_id
+            background_path = text_result.background_path
+            image_size = text_result.image_size
+        else:
+            glyph_result = self.extract_font_glyphs(
+                captcha_path=captcha_path,
+                include_pixels=False,
+                include_rgba_2d=True,
+            )
+            glyphs = glyph_result.glyphs
+            group_id = glyph_result.group_id
+            background_path = glyph_result.background_path
+            image_size = glyph_result.image_size
         prefix = file_prefix or Path(captcha_path).stem
         return export_font_glyph_images(
-            group_id=glyph_result.group_id,
-            background_path=glyph_result.background_path,
-            image_size=glyph_result.image_size,
-            glyphs=glyph_result.glyphs,
+            group_id=group_id,
+            background_path=background_path,
+            image_size=image_size,
+            glyphs=glyphs,
             output_dir=output_dir,
             file_prefix=prefix,
+            render_mode=render_mode,
         )
 
     def export_font_glyph_images_dict(
@@ -454,11 +503,46 @@ class CaptchaFontLocator:
         captcha_path: str,
         output_dir: str,
         file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+        use_text_regions: bool = False,
     ) -> Dict:
         return asdict(
             self.export_font_glyph_images(
                 captcha_path=captcha_path,
                 output_dir=output_dir,
                 file_prefix=file_prefix,
+                render_mode=render_mode,
+                use_text_regions=use_text_regions,
+            )
+        )
+
+    def export_text_glyph_images(
+        self,
+        captcha_path: str,
+        output_dir: str,
+        file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+    ) -> FontGlyphImageExportResult:
+        return self.export_font_glyph_images(
+            captcha_path=captcha_path,
+            output_dir=output_dir,
+            file_prefix=file_prefix,
+            render_mode=render_mode,
+            use_text_regions=True,
+        )
+
+    def export_text_glyph_images_dict(
+        self,
+        captcha_path: str,
+        output_dir: str,
+        file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+    ) -> Dict:
+        return asdict(
+            self.export_text_glyph_images(
+                captcha_path=captcha_path,
+                output_dir=output_dir,
+                file_prefix=file_prefix,
+                render_mode=render_mode,
             )
         )

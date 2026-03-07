@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from captcha_font_sdk import CaptchaRecognizer
+from captcha_background_sdk import CaptchaVisionSDK, GlyphRenderMode
 
 
 def main() -> None:
@@ -23,12 +23,15 @@ def main() -> None:
     glyph_features_json = Path("./font_glyph_features_result.json")
     glyph_slots_json = Path("./font_glyph_slots_result.json")
     glyph_images_dir = Path("./glyph_images")
+    text_glyph_images_original_dir = Path("./text_glyph_images_original")
+    text_glyph_images_black_transparent_dir = Path("./text_glyph_images_black_transparent")
+    text_glyph_images_black_white_dir = Path("./text_glyph_images_black_white")
     glyph_batch_json = Path("./font_glyph_batch_summary.json")
     glyph_dataset_npz = Path("./glyph_dataset.npz")
     glyph_dataset_meta_json = Path("./glyph_dataset_meta.json")
     slider_output_json = Path("./slider_locate_result.json")
 
-    sdk = CaptchaRecognizer(
+    sdk = CaptchaVisionSDK(
         diff_threshold=18,
         font_min_component_pixels=8,
         slider_min_gap_pixels=20,
@@ -37,6 +40,8 @@ def main() -> None:
         text_min_height=3,
         text_min_fill_ratio=0.06,
         text_max_fill_ratio=0.95,
+        text_expected_region_count=4,
+        text_force_merge_max_gap=28,
     )
     index = sdk.build_background_index(backgrounds_dir, recursive=True)
     print(f"indexed backgrounds: {len(index)}")
@@ -116,6 +121,37 @@ def main() -> None:
         output_dir=str(glyph_images_dir),
     )
     print(f"glyph images exported: {glyph_images['stats']['exported_count']}, dir={glyph_images['output_dir']}")
+
+    text_glyphs_original = sdk.export_text_glyph_images_dict(
+        font_captcha_path,
+        output_dir=str(text_glyph_images_original_dir),
+        render_mode=GlyphRenderMode.ORIGINAL,
+    )
+    print(
+        f"text glyph images (original) exported: "
+        f"{text_glyphs_original['stats']['exported_count']}, "
+        f"dir={text_glyphs_original['output_dir']}"
+    )
+    text_glyphs_black_transparent = sdk.export_text_glyph_images_dict(
+        font_captcha_path,
+        output_dir=str(text_glyph_images_black_transparent_dir),
+        render_mode=GlyphRenderMode.BLACK_ON_TRANSPARENT,
+    )
+    print(
+        f"text glyph images (black_on_transparent) exported: "
+        f"{text_glyphs_black_transparent['stats']['exported_count']}, "
+        f"dir={text_glyphs_black_transparent['output_dir']}"
+    )
+    text_glyphs_black_white = sdk.export_text_glyph_images_dict(
+        font_captcha_path,
+        output_dir=str(text_glyph_images_black_white_dir),
+        render_mode=GlyphRenderMode.BLACK_ON_WHITE,
+    )
+    print(
+        f"text glyph images (black_on_white) exported: "
+        f"{text_glyphs_black_white['stats']['exported_count']}, "
+        f"dir={text_glyphs_black_white['output_dir']}"
+    )
 
     slider_result = sdk.recognize_slider_dict(slider_captcha_path)
     slider_output_json.write_text(json.dumps(slider_result, ensure_ascii=False, indent=2), encoding="utf-8")

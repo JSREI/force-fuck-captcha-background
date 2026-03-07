@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 
@@ -8,7 +9,67 @@ RGB = Tuple[int, int, int]
 RGBA = Tuple[int, int, int, int]
 BBox = Tuple[int, int, int, int]  # left, top, right, bottom (inclusive)
 Pixel = Tuple[int, int]  # x, y
-CaptchaType = Literal["font", "slider"]
+
+
+class CaptchaType(str, Enum):
+    """Supported captcha modes in the unified recognize API."""
+
+    TEXT = "text"
+    # Kept for backward compatibility with older font-oriented API naming.
+    FONT = "font"
+    SLIDER = "slider"
+
+
+class GlyphRenderMode(str, Enum):
+    """Render modes for exported glyph PNG images."""
+
+    ORIGINAL = "original"
+    BLACK_ON_TRANSPARENT = "black_on_transparent"
+    BLACK_ON_WHITE = "black_on_white"
+    WHITE_ON_BLACK = "white_on_black"
+
+
+CaptchaTypeLike = Union[CaptchaType, Literal["text", "font", "slider"], str]
+GlyphRenderModeLike = Union[
+    GlyphRenderMode,
+    Literal["original", "black_on_transparent", "black_on_white", "white_on_black"],
+    str,
+]
+
+
+def normalize_captcha_type(captcha_type: CaptchaTypeLike) -> CaptchaType:
+    if isinstance(captcha_type, CaptchaType):
+        return captcha_type
+    value = str(captcha_type).strip().lower()
+    if value == CaptchaType.TEXT.value:
+        return CaptchaType.TEXT
+    if value == CaptchaType.FONT.value:
+        return CaptchaType.FONT
+    if value == CaptchaType.SLIDER.value:
+        return CaptchaType.SLIDER
+    raise ValueError(
+        "captcha_type must be CaptchaType.TEXT/FONT/SLIDER "
+        "or one of 'text'/'font'/'slider'"
+    )
+
+
+def normalize_glyph_render_mode(render_mode: GlyphRenderModeLike) -> GlyphRenderMode:
+    if isinstance(render_mode, GlyphRenderMode):
+        return render_mode
+    value = str(render_mode).strip().lower()
+    if value == GlyphRenderMode.ORIGINAL.value:
+        return GlyphRenderMode.ORIGINAL
+    if value == GlyphRenderMode.BLACK_ON_TRANSPARENT.value:
+        return GlyphRenderMode.BLACK_ON_TRANSPARENT
+    if value == GlyphRenderMode.BLACK_ON_WHITE.value:
+        return GlyphRenderMode.BLACK_ON_WHITE
+    if value == GlyphRenderMode.WHITE_ON_BLACK.value:
+        return GlyphRenderMode.WHITE_ON_BLACK
+    raise ValueError(
+        "render_mode must be GlyphRenderMode.ORIGINAL/BLACK_ON_TRANSPARENT/"
+        "BLACK_ON_WHITE/WHITE_ON_BLACK or one of "
+        "'original'/'black_on_transparent'/'black_on_white'/'white_on_black'"
+    )
 
 
 @dataclass(frozen=True)

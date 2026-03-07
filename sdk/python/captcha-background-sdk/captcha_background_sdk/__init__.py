@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 from .locator import CaptchaFontLocator
 from .local_restore_types import (
@@ -18,32 +18,50 @@ from .types import (
     BatchGlyphExtractItem,
     BatchGlyphExtractResult,
     CaptchaType,
+    CaptchaTypeLike,
+    FontComponent,
     FontGlyph,
-    FontGlyphImageExportResult,
-    FontGlyphImageItem,
+    FontGlyphExtractResult,
     FontGlyphFeature,
     FontGlyphFeatureExtractResult,
-    FontGlyphExtractResult,
+    FontGlyphImageExportResult,
+    FontGlyphImageItem,
     FontGlyphSlot,
     FontGlyphSlotExtractResult,
     GlyphDatasetExportResult,
-    FontComponent,
+    GlyphRenderMode,
+    GlyphRenderModeLike,
     LocateResult,
     SliderGap,
     SliderLocateResult,
     TextLayerResult,
     TextLocateResult,
     TextRegion,
+    normalize_captcha_type,
+    normalize_glyph_render_mode,
 )
+
+# Neutral naming aliases (preferred for new users).
+CaptchaVisionSDK = CaptchaRecognizer
+CaptchaTextLocator = CaptchaFontLocator
+CaptchaGapLocator = CaptchaSliderLocator
 
 __all__ = [
     "__version__",
     "CaptchaRecognizer",
+    "CaptchaVisionSDK",
     "CaptchaFontLocator",
+    "CaptchaTextLocator",
     "CaptchaSliderLocator",
+    "CaptchaGapLocator",
     "BackgroundRestoreResult",
     "BackgroundMeta",
     "CaptchaType",
+    "CaptchaTypeLike",
+    "GlyphRenderMode",
+    "GlyphRenderModeLike",
+    "normalize_captcha_type",
+    "normalize_glyph_render_mode",
     "BatchGlyphExtractItem",
     "BatchGlyphExtractResult",
     "FontGlyph",

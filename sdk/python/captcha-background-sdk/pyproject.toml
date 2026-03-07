@@ -3,9 +3,9 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "captcha-font-sdk"
+name = "captcha-background-sdk"
 dynamic = ["version"]
-description = "Captcha recognizer SDK for background mapping, font localization, slider gap detection, and local background restore."
+description = "Captcha vision SDK for text/gap localization, background mapping, and local background restore."
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 authors = [
   { name = "JSREI" }
 ]
-keywords = ["captcha", "image-processing", "ocr", "slider", "font"]
+keywords = ["captcha", "image-processing", "ocr", "slider", "text", "vision"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -40,7 +40,7 @@ Issues = "https://github.com/JSREI/force-fuck-captcha-background/issues"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["captcha_font_sdk*"]
+include = ["captcha_background_sdk*"]
 
 [tool.setuptools.dynamic]
-version = { attr = "captcha_font_sdk.__version__" }
+version = { attr = "captcha_background_sdk.__version__" }

@@ -25,6 +25,7 @@ def extract_components(
     connectivity: int,
     min_component_pixels: int,
     include_pixels: bool,
+    color_sensitive: bool = True,
 ) -> List[FontComponent]:
     visited = [False] * (width * height)
     components: List[FontComponent] = []
@@ -60,7 +61,7 @@ def extract_components(
                 ni = ny * width + nx
                 if visited[ni] or not mask[ni]:
                     continue
-                if colors[ni] != base_color:
+                if color_sensitive and colors[ni] != base_color:
                     continue
                 visited[ni] = True
                 q.append(ni)
@@ -79,4 +80,3 @@ def extract_components(
 
     components.sort(key=lambda c: c.pixel_count, reverse=True)
     return components
-

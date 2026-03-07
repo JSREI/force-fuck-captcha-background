@@ -1,18 +1,26 @@
-# Captcha Recognizer SDK (Python)
+# Captcha Vision SDK (Python)
 
 ## Install
 
-    pip install captcha-font-sdk
+    pip install captcha-background-sdk
+
+Recommended import namespace (neutral naming):
+
+    from captcha_background_sdk import CaptchaType, CaptchaVisionSDK, GlyphRenderMode
+
+Backward-compatible import namespace:
+
+    from captcha_background_sdk import CaptchaRecognizer
 
 From source:
 
-    cd sdk/python/captcha-font-sdk
+    cd sdk/python/captcha-background-sdk
     pip install -e .
 
 If you run scripts from repo root, add SDK dir to `PYTHONPATH`:
 
 ```bash
-PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/examples/demo.py
+PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-background-sdk/examples/demo.py
 ```
 
 ## What this SDK does
@@ -23,9 +31,9 @@ PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/exampl
    - find matching full background,
    - diff captcha vs background.
 3. Provide **different APIs by captcha type**:
-   - font captcha: extract color-based connected components (字体验证码),
+   - text captcha: extract connected components and text-region boxes (字体验证码),
    - slider captcha: locate the largest gap region and return bbox/center (缺口验证码).
-4. For font captcha, provide:
+4. For text captcha, provide:
    - text position detection (文字位置框),
    - text-pixel extraction to transparent PNG (文字像素扣图).
 5. Provide local restore workflow (same capability as UI):
@@ -40,9 +48,10 @@ PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/exampl
 
 ## API overview
 
-### 1) Unified facade: `CaptchaRecognizer(...)`
+### 1) Unified facade: `CaptchaVisionSDK(...)` (alias: `CaptchaRecognizer(...)`)
 
 - `build_background_index(background_dir, recursive=True, exts=None)`
+- `recognize_text(captcha_path, include_pixels=True)` (preferred for boxed text-region detection)
 - `recognize_font(captcha_path, include_pixels=True)`
 - `recognize_text_positions(captcha_path, include_pixels=True)`
 - `extract_text_layer(captcha_path, output_path=None, crop_to_content=False)`
@@ -50,14 +59,15 @@ PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/exampl
 - `extract_font_glyphs(captcha_path, include_pixels=True, include_rgba_2d=False)`
 - `extract_font_glyph_features(captcha_path, target_width=32, target_height=32, keep_aspect_ratio=True)`
 - `extract_font_glyph_slots(captcha_path, slot_count=5, target_width=32, target_height=32, ...)`
-- `export_font_glyph_images(captcha_path, output_dir, file_prefix=None)`
+- `export_font_glyph_images(captcha_path, output_dir, file_prefix=None, render_mode=GlyphRenderMode.ORIGINAL, use_text_regions=False)`
+- `export_text_glyph_images(captcha_path, output_dir, file_prefix=None, render_mode=GlyphRenderMode.ORIGINAL)`
 - `batch_extract_font_glyph_features(input_dir, target_width=32, target_height=32, ...)`
 - `export_font_glyph_dataset_npz(input_dir, output_npz_path, target_width=32, target_height=32, ...)`
 - `recognize_slider(captcha_path)`
 - `run_local_restore(input_dir, output_dir, clear_output_before_run=False, recursive=True, max_error_items=200, progress_callback=None, stop_checker=None)`
-- `recognize(captcha_path, captcha_type="font" | "slider", include_pixels=True)`
+- `recognize(captcha_path, captcha_type=CaptchaType.TEXT/FONT/SLIDER, include_pixels=True)`
 
-### 2) Font captcha API: `CaptchaFontLocator(...)`
+### 2) Text captcha API: `CaptchaTextLocator(...)` (alias: `CaptchaFontLocator(...)`)
 
 - `locate_fonts(...)`
 - `locate_fonts_dict(...)`
@@ -71,6 +81,8 @@ PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/exampl
 - `extract_font_glyph_slots_dict(...)`
 - `export_font_glyph_images(...)`
 - `export_font_glyph_images_dict(...)`
+- `export_text_glyph_images(...)`
+- `export_text_glyph_images_dict(...)`
 - `locate_text_positions(...)`
 - `locate_text_positions_dict(...)`
 - `extract_text_layer(...)`
@@ -91,13 +103,16 @@ PYTHONPATH=sdk/python/captcha-font-sdk python sdk/python/captcha-font-sdk/exampl
 ### Unified API
 
 ```python
-from captcha_font_sdk import CaptchaRecognizer
+from captcha_background_sdk import CaptchaType, CaptchaVisionSDK, GlyphRenderMode
 
-sdk = CaptchaRecognizer(
+sdk = CaptchaVisionSDK(
     diff_threshold=18,
     font_min_component_pixels=8,
     slider_min_gap_pixels=20,
     connectivity=8,
+    # New: force-merge split fragments back to fixed-length glyph boxes.
+    text_expected_region_count=4,
+    text_force_merge_max_gap=28,
 )
 sdk.build_background_index("/your/full-background-dir")
 
@@ -132,6 +147,21 @@ glyph_images = sdk.export_font_glyph_images_dict(
     "/your/new-font-captcha.png",
     output_dir="./glyph_images",
 )
+text_glyph_images_original = sdk.export_text_glyph_images_dict(
+    "/your/new-font-captcha.png",
+    output_dir="./text_glyphs_original",
+    render_mode=GlyphRenderMode.ORIGINAL,
+)
+text_glyph_images_black_transparent = sdk.export_text_glyph_images_dict(
+    "/your/new-font-captcha.png",
+    output_dir="./text_glyphs_black_transparent",
+    render_mode=GlyphRenderMode.BLACK_ON_TRANSPARENT,
+)
+text_glyph_images_black_white = sdk.export_text_glyph_images_dict(
+    "/your/new-font-captcha.png",
+    output_dir="./text_glyphs_black_white",
+    render_mode=GlyphRenderMode.BLACK_ON_WHITE,
+)
 slider_result = sdk.recognize_slider_dict("/your/new-slider-captcha.png")
 
 print(font_result["stats"]["component_count"])
@@ -144,6 +174,9 @@ print(glyphs["glyphs"][0]["bitmap_2d"])
 print(len(glyph_features["glyph_features"][0]["vector_1d"]))  # 32*32
 print(glyph_slots["stats"]["filled_slots"], glyph_slots["slot_count"])
 print(glyph_images["stats"]["exported_count"], glyph_images["output_dir"])
+print(text_glyph_images_original["stats"]["exported_count"])
+print(text_glyph_images_black_transparent["stats"]["exported_count"])
+print(text_glyph_images_black_white["stats"]["exported_count"])
 print(slider_result["gap"])
 ```
 
@@ -178,9 +211,9 @@ print(dataset["glyph_sample_count"], dataset["output_npz_path"])
 ### Local restore (same as UI "本地还原")
 
 ```python
-from captcha_font_sdk import CaptchaRecognizer
+from captcha_background_sdk import CaptchaType, CaptchaVisionSDK, GlyphRenderMode
 
-sdk = CaptchaRecognizer()
+sdk = CaptchaVisionSDK()
 summary = sdk.run_local_restore_dict(
     input_dir="/path/to/captcha_images",
     output_dir="/path/to/output_backgrounds",
@@ -196,18 +229,33 @@ print(summary["summary_path"])
 `run_local_restore(...)` will also refresh SDK background index from `output_dir`,
 so you can call `recognize_*` APIs immediately after local restore.
 
+### Batch full-dataset validation (with boxed outputs)
+
+Run:
+
+    python examples/batch_text_positions_validate.py \
+      --backgrounds /path/to/full_backgrounds \
+      --input-dir /path/to/raw_captcha_images \
+      --output-dir /path/to/output_dir \
+      --expected-region-count 4
+
+This writes:
+- `output_dir/boxed/*.png` (red rectangles on each captcha)
+- `output_dir/per_image_json/*.json` (per-image detection payload)
+- `output_dir/summary.json` (distribution + top problematic cases)
+
 ### Separate APIs by captcha type
 
 ```python
-from captcha_font_sdk import CaptchaFontLocator, CaptchaSliderLocator
+from captcha_background_sdk import CaptchaTextLocator, CaptchaGapLocator
 
 background_dir = "/your/full-background-dir"
 
-font_sdk = CaptchaFontLocator()
+font_sdk = CaptchaTextLocator()
 font_sdk.build_background_index(background_dir)
 font_result = font_sdk.locate_fonts_dict("/your/new-font-captcha.png")
 
-slider_sdk = CaptchaSliderLocator()
+slider_sdk = CaptchaGapLocator()
 slider_sdk.build_background_index(background_dir)
 slider_result = slider_sdk.locate_gap_dict("/your/new-slider-captcha.png")
 
@@ -225,7 +273,13 @@ text_layer = font_sdk.extract_text_layer_dict(
 - If `group_id` is not found, SDK raises `KeyError`.
 - Slider result `gap` may be `null` when no connected region reaches `min_gap_pixels`.
 - Text position detection uses exact-color connected components plus size/fill filtering and near-neighbor merge.
+- Text position detection is now color-insensitive and can enforce fixed-length output via `text_expected_region_count` (default `4`).
 - `extract_text_layer(...)` returns transparent image with only text pixels preserved.
+- Glyph export `render_mode` options:
+  - `original`: keep source RGBA colors
+  - `black_on_transparent`: black glyph, transparent background
+  - `black_on_white`: black glyph, white background
+  - `white_on_black`: white glyph, black background
 - `export_font_glyph_dataset_npz(...)` requires `numpy` (`pip install numpy`).
 - You can tune:
   - increase `diff_threshold` to reduce tiny color jitter,

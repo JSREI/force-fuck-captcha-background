@@ -15,11 +15,19 @@ from .local_restore_runner import run_local_restore
 from .local_restore_types import LocalRestoreConfig, ProgressCallback, StopChecker
 from .locator import CaptchaFontLocator
 from .slider_locator import CaptchaSliderLocator
-from .types import BackgroundMeta, CaptchaType, RecognitionResult
+from .types import (
+    BackgroundMeta,
+    CaptchaType,
+    CaptchaTypeLike,
+    GlyphRenderMode,
+    GlyphRenderModeLike,
+    RecognitionResult,
+    normalize_captcha_type,
+)
 
 
 class CaptchaRecognizer:
-    """Facade API for both font captcha and slider captcha."""
+    """Facade API for text captcha and slider captcha."""
 
     def __init__(
         self,
@@ -33,6 +41,8 @@ class CaptchaRecognizer:
         text_max_fill_ratio: float = 0.95,
         text_merge_gap: int = 2,
         text_min_vertical_overlap_ratio: float = 0.4,
+        text_expected_region_count: Optional[int] = 4,
+        text_force_merge_max_gap: int = 28,
     ) -> None:
         self.font = CaptchaFontLocator(
             diff_threshold=diff_threshold,
@@ -44,6 +54,8 @@ class CaptchaRecognizer:
             text_max_fill_ratio=text_max_fill_ratio,
             text_merge_gap=text_merge_gap,
             text_min_vertical_overlap_ratio=text_min_vertical_overlap_ratio,
+            text_expected_region_count=text_expected_region_count,
+            text_force_merge_max_gap=text_force_merge_max_gap,
         )
         self.slider = CaptchaSliderLocator(
             diff_threshold=diff_threshold,
@@ -71,6 +83,13 @@ class CaptchaRecognizer:
 
     def recognize_font_dict(self, captcha_path: str, include_pixels: bool = True) -> Dict:
         return self.font.locate_fonts_dict(captcha_path, include_pixels=include_pixels)
+
+    # Neutral naming alias: "text" is preferred over legacy "font".
+    def recognize_text(self, captcha_path: str, include_pixels: bool = True):
+        return self.recognize_text_positions(captcha_path, include_pixels=include_pixels)
+
+    def recognize_text_dict(self, captcha_path: str, include_pixels: bool = True) -> Dict:
+        return self.recognize_text_positions_dict(captcha_path, include_pixels=include_pixels)
 
     def recognize_text_positions(self, captcha_path: str, include_pixels: bool = True):
         return self.font.locate_text_positions(captcha_path, include_pixels=include_pixels)
@@ -211,11 +230,15 @@ class CaptchaRecognizer:
         captcha_path: str,
         output_dir: str,
         file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+        use_text_regions: bool = False,
     ):
         return self.font.export_font_glyph_images(
             captcha_path=captcha_path,
             output_dir=output_dir,
             file_prefix=file_prefix,
+            render_mode=render_mode,
+            use_text_regions=use_text_regions,
         )
 
     def export_font_glyph_images_dict(
@@ -223,11 +246,43 @@ class CaptchaRecognizer:
         captcha_path: str,
         output_dir: str,
         file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+        use_text_regions: bool = False,
     ) -> Dict:
         return self.font.export_font_glyph_images_dict(
             captcha_path=captcha_path,
             output_dir=output_dir,
             file_prefix=file_prefix,
+            render_mode=render_mode,
+            use_text_regions=use_text_regions,
+        )
+
+    def export_text_glyph_images(
+        self,
+        captcha_path: str,
+        output_dir: str,
+        file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+    ):
+        return self.font.export_text_glyph_images(
+            captcha_path=captcha_path,
+            output_dir=output_dir,
+            file_prefix=file_prefix,
+            render_mode=render_mode,
+        )
+
+    def export_text_glyph_images_dict(
+        self,
+        captcha_path: str,
+        output_dir: str,
+        file_prefix: Optional[str] = None,
+        render_mode: GlyphRenderModeLike = GlyphRenderMode.ORIGINAL,
+    ) -> Dict:
+        return self.font.export_text_glyph_images_dict(
+            captcha_path=captcha_path,
+            output_dir=output_dir,
+            file_prefix=file_prefix,
+            render_mode=render_mode,
         )
 
     def batch_extract_font_glyph_features(
@@ -400,19 +455,22 @@ class CaptchaRecognizer:
     def recognize(
         self,
         captcha_path: str,
-        captcha_type: CaptchaType,
+        captcha_type: CaptchaTypeLike = CaptchaType.TEXT,
         include_pixels: bool = True,
     ) -> RecognitionResult:
-        if captcha_type == "font":
+        normalized_type = normalize_captcha_type(captcha_type)
+        if normalized_type == CaptchaType.TEXT:
+            return self.recognize_text_positions(captcha_path, include_pixels=include_pixels)
+        if normalized_type == CaptchaType.FONT:
             return self.recognize_font(captcha_path, include_pixels=include_pixels)
-        if captcha_type == "slider":
+        if normalized_type == CaptchaType.SLIDER:
             return self.recognize_slider(captcha_path)
         raise ValueError(f"unsupported captcha_type: {captcha_type}")
 
     def recognize_dict(
         self,
         captcha_path: str,
-        captcha_type: CaptchaType,
+        captcha_type: CaptchaTypeLike = CaptchaType.TEXT,
         include_pixels: bool = True,
     ) -> Dict:
         return asdict(self.recognize(captcha_path, captcha_type=captcha_type, include_pixels=include_pixels))

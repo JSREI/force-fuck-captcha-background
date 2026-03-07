@@ -53,7 +53,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: sdk/python/captcha-font-sdk
+        working-directory: sdk/python/captcha-background-sdk
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -72,16 +72,16 @@ jobs:
           import re
           from pathlib import Path
 
-          content = Path("captcha_font_sdk/__init__.py").read_text(encoding="utf-8")
+          content = Path("captcha_background_sdk/__init__.py").read_text(encoding="utf-8")
           match = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
           if not match:
-              raise SystemExit("Unable to locate __version__ in captcha_font_sdk/__init__.py")
+              raise SystemExit("Unable to locate __version__ in captcha_background_sdk/__init__.py")
           print(match.group(1))
           PY
           )"
 
           if [[ "${release_version}" != "${package_version}" ]]; then
-            echo "::error::Release tag ${RELEASE_TAG} does not match captcha_font_sdk.__version__ (${package_version})."
+            echo "::error::Release tag ${RELEASE_TAG} does not match captcha_background_sdk.__version__ (${package_version})."
             exit 1
           fi
 
@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-dist
-          path: sdk/python/captcha-font-sdk/dist/*
+          path: sdk/python/captcha-background-sdk/dist/*
           if-no-files-found: error
 
   publish_python_sdk:
@@ -109,7 +109,7 @@ jobs:
     if: ${{ !github.event.release.prerelease }}
     environment:
       name: pypi
-      url: https://pypi.org/project/captcha-font-sdk/
+      url: https://pypi.org/project/captcha-background-sdk/
     permissions:
       contents: read
     steps:
