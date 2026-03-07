@@ -1,0 +1,32 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Python SDK
+      labels:
+        - python-sdk
+        - sdk
+        - pypi
+    - title: Electron UI
+      labels:
+        - electron
+        - ui
+        - desktop
+    - title: Release Automation
+      labels:
+        - release
+        - ci
+        - github-actions
+    - title: Documentation
+      labels:
+        - docs
+    - title: Fixes
+      labels:
+        - bug
+        - fix
+        - bugfix
+    - title: Features
+      labels:
+        - enhancement
+        - feature

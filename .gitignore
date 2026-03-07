@@ -56,3 +56,4 @@ yarn-error.log*
 .cache/
 .webpack/
 .next/ 
+*.egg-info/
