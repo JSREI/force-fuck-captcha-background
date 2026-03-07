@@ -53,6 +53,17 @@ The workflow validates that these two versions match before publishing to PyPI.
 
 If the release is marked as a prerelease, the workflow still builds the artifacts and uploads them to GitHub, but it skips the PyPI publish step.
 
+## Re-upload assets for an existing release
+
+If a historical release has missing or broken assets, you can rebuild and overwrite assets for that existing tag without creating a new release:
+
+1. Open GitHub Actions -> Release workflow.
+2. Click Run workflow.
+3. Fill release_tag (example: v0.2.0).
+4. Run the workflow and wait for upload_release_assets.
+
+The workflow rebuilds from that exact tag, validates asset files are non-empty, and uses overwrite mode when attaching files, so old broken assets are replaced with rebuilt ones.
+
 ## Release notes behavior
 
 - The workflow regenerates release notes using GitHub's generated release notes API.
