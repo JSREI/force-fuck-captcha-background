@@ -41,6 +41,10 @@ PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-backgroun
    - group by 4-corner bucket id,
    - per-pixel voting to restore backgrounds,
    - write background images + `summary.json`.
+6. Provide background-only analysis APIs (no OCR dependency):
+   - background texture metrics (histogram, entropy, edge density, grid energy),
+   - multi-scale deep-style feature vector for downstream model services,
+   - foreground skew estimation to support optional pre-rectification flow.
 
 ## group_id format
 
@@ -65,6 +69,9 @@ PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-backgroun
 - `export_font_glyph_dataset_npz(input_dir, output_npz_path, target_width=32, target_height=32, ...)`
 - `recognize_slider(captcha_path)`
 - `run_local_restore(input_dir, output_dir, clear_output_before_run=False, recursive=True, max_error_items=200, progress_callback=None, stop_checker=None)`
+- `analyze_background_texture(captcha_path, grid_rows=4, grid_cols=4, histogram_bins=16, edge_threshold=18.0)`
+- `extract_background_deep_features(captcha_path, levels=(1,2,4), edge_threshold=18.0)`
+- `estimate_foreground_skew(captcha_path, min_pixels=20, max_abs_angle=45.0)`
 - `recognize(captcha_path, captcha_type=CaptchaType.TEXT/FONT/SLIDER, include_pixels=True)`
 
 ### 2) Text captcha API: `CaptchaTextLocator(...)` (alias: `CaptchaFontLocator(...)`)
@@ -127,6 +134,19 @@ restored_bg = sdk.restore_background_by_captcha_dict(
     "/your/new-font-captcha.png",
     output_path="./restored_background.png",
 )
+bg_texture = sdk.analyze_background_texture_dict(
+    "/your/new-font-captcha.png",
+    grid_rows=4,
+    grid_cols=4,
+    histogram_bins=16,
+)
+bg_deep = sdk.extract_background_deep_features_dict(
+    "/your/new-font-captcha.png",
+    levels=(1, 2, 4),
+)
+skew_estimate = sdk.estimate_foreground_skew_dict(
+    "/your/new-font-captcha.png",
+)
 glyphs = sdk.extract_font_glyphs_dict(
     "/your/new-font-captcha.png",
     include_pixels=True,
@@ -168,6 +188,9 @@ print(font_result["stats"]["component_count"])
 print(text_positions["stats"]["region_count"])
 print(text_layer["output_path"])
 print(restored_bg["background_path"], restored_bg["output_path"])
+print(bg_texture["entropy"], bg_texture["edge_density"])
+print(bg_deep["levels"], len(bg_deep["vector_1d"]))
+print(skew_estimate["angle_degrees"], skew_estimate["confidence"])
 print(glyphs["stats"]["glyph_count"])
 print(glyphs["glyphs"][0]["rect_index"], glyphs["glyphs"][0]["bbox"])
 print(glyphs["glyphs"][0]["bitmap_2d"])

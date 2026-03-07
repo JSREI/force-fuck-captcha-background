@@ -3,22 +3,31 @@ from __future__ import annotations
 from dataclasses import asdict
 import json
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, List, Optional
 
 from .background_index import (
     build_background_index as _build_background_index,
     build_background_index_from_files,
+    load_rgba_pixels,
+)
+from .background_feature_engine import (
+    extract_background_deep_vector,
+    extract_background_texture_metrics,
 )
 from .font_glyph_batch import batch_extract_font_glyph_features
 from .font_glyph_dataset import export_glyph_dataset_npz
+from .foreground_skew import estimate_foreground_skew as estimate_foreground_skew_pixels
 from .local_restore_runner import run_local_restore
 from .local_restore_types import LocalRestoreConfig, ProgressCallback, StopChecker
 from .locator import CaptchaFontLocator
 from .slider_locator import CaptchaSliderLocator
 from .types import (
+    BackgroundDeepFeatureResult,
     BackgroundMeta,
+    BackgroundTextureResult,
     CaptchaType,
     CaptchaTypeLike,
+    ForegroundSkewEstimateResult,
     GlyphRenderMode,
     GlyphRenderModeLike,
     RecognitionResult,
@@ -66,6 +75,13 @@ class CaptchaRecognizer:
     @property
     def backgrounds(self) -> Dict[str, BackgroundMeta]:
         return self.font.backgrounds
+
+    def _resolve_background_for_captcha(
+        self,
+        captcha_path: str,
+    ) -> tuple[str, str, tuple[int, int]]:
+        restored = self.font.restore_background(captcha_path=captcha_path, output_path=None)
+        return restored.group_id, restored.background_path, restored.image_size
 
     def build_background_index(
         self,
@@ -394,6 +410,135 @@ class CaptchaRecognizer:
                 limit=limit,
                 continue_on_error=continue_on_error,
                 output_json_path=output_json_path,
+            )
+        )
+
+    def analyze_background_texture(
+        self,
+        captcha_path: str,
+        grid_rows: int = 4,
+        grid_cols: int = 4,
+        histogram_bins: int = 16,
+        edge_threshold: float = 18.0,
+    ) -> BackgroundTextureResult:
+        group_id, background_path, image_size = self._resolve_background_for_captcha(captcha_path)
+        width, height, background_pixels = load_rgba_pixels(background_path)
+        metrics = extract_background_texture_metrics(
+            rgba_pixels=background_pixels,
+            width=width,
+            height=height,
+            grid_rows=grid_rows,
+            grid_cols=grid_cols,
+            histogram_bins=histogram_bins,
+            edge_threshold=edge_threshold,
+        )
+        return BackgroundTextureResult(
+            group_id=group_id,
+            background_path=background_path,
+            image_size=image_size,
+            mean_intensity=metrics["mean_intensity"],
+            std_intensity=metrics["std_intensity"],
+            entropy=metrics["entropy"],
+            edge_density=metrics["edge_density"],
+            histogram=metrics["histogram"],
+            grid_energy=metrics["grid_energy"],
+            stats=metrics["stats"],
+        )
+
+    def analyze_background_texture_dict(
+        self,
+        captcha_path: str,
+        grid_rows: int = 4,
+        grid_cols: int = 4,
+        histogram_bins: int = 16,
+        edge_threshold: float = 18.0,
+    ) -> Dict:
+        return asdict(
+            self.analyze_background_texture(
+                captcha_path=captcha_path,
+                grid_rows=grid_rows,
+                grid_cols=grid_cols,
+                histogram_bins=histogram_bins,
+                edge_threshold=edge_threshold,
+            )
+        )
+
+    def extract_background_deep_features(
+        self,
+        captcha_path: str,
+        levels: Optional[Iterable[int]] = None,
+        edge_threshold: float = 18.0,
+    ) -> BackgroundDeepFeatureResult:
+        group_id, background_path, image_size = self._resolve_background_for_captcha(captcha_path)
+        width, height, background_pixels = load_rgba_pixels(background_path)
+        deep_features = extract_background_deep_vector(
+            rgba_pixels=background_pixels,
+            width=width,
+            height=height,
+            levels=levels,
+            edge_threshold=edge_threshold,
+        )
+        return BackgroundDeepFeatureResult(
+            group_id=group_id,
+            background_path=background_path,
+            image_size=image_size,
+            levels=deep_features["levels"],
+            patch_count=deep_features["patch_count"],
+            vector_1d=deep_features["vector_1d"],
+            stats=deep_features["stats"],
+        )
+
+    def extract_background_deep_features_dict(
+        self,
+        captcha_path: str,
+        levels: Optional[Iterable[int]] = None,
+        edge_threshold: float = 18.0,
+    ) -> Dict:
+        return asdict(
+            self.extract_background_deep_features(
+                captcha_path=captcha_path,
+                levels=levels,
+                edge_threshold=edge_threshold,
+            )
+        )
+
+    def estimate_foreground_skew(
+        self,
+        captcha_path: str,
+        min_pixels: int = 20,
+        max_abs_angle: float = 45.0,
+    ) -> ForegroundSkewEstimateResult:
+        text_result = self.recognize_text_positions(captcha_path=captcha_path, include_pixels=True)
+        foreground_pixels: List[tuple[int, int]] = []
+        for region in text_result.regions:
+            foreground_pixels.extend(region.pixels)
+
+        skew = estimate_foreground_skew_pixels(
+            pixels=foreground_pixels,
+            min_pixels=min_pixels,
+            max_abs_angle=max_abs_angle,
+        )
+        return ForegroundSkewEstimateResult(
+            group_id=text_result.group_id,
+            background_path=text_result.background_path,
+            image_size=text_result.image_size,
+            angle_degrees=skew["angle_degrees"],
+            confidence=skew["confidence"],
+            pixel_count=skew["pixel_count"],
+            eigen_ratio=skew["eigen_ratio"],
+        )
+
+    def estimate_foreground_skew_dict(
+        self,
+        captcha_path: str,
+        min_pixels: int = 20,
+        max_abs_angle: float = 45.0,
+    ) -> Dict:
+        return asdict(
+            self.estimate_foreground_skew(
+                captcha_path=captcha_path,
+                min_pixels=min_pixels,
+                max_abs_angle=max_abs_angle,
             )
         )
 

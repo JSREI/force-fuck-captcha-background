@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .locator import CaptchaFontLocator
 from .local_restore_types import (
@@ -13,7 +13,9 @@ from .local_restore_types import (
 from .recognizer import CaptchaRecognizer
 from .slider_locator import CaptchaSliderLocator
 from .types import (
+    BackgroundDeepFeatureResult,
     BackgroundRestoreResult,
+    BackgroundTextureResult,
     BackgroundMeta,
     BatchGlyphExtractItem,
     BatchGlyphExtractResult,
@@ -28,6 +30,7 @@ from .types import (
     FontGlyphImageItem,
     FontGlyphSlot,
     FontGlyphSlotExtractResult,
+    ForegroundSkewEstimateResult,
     GlyphDatasetExportResult,
     GlyphRenderMode,
     GlyphRenderModeLike,
@@ -54,6 +57,9 @@ __all__ = [
     "CaptchaTextLocator",
     "CaptchaSliderLocator",
     "CaptchaGapLocator",
+    "BackgroundTextureResult",
+    "BackgroundDeepFeatureResult",
+    "ForegroundSkewEstimateResult",
     "BackgroundRestoreResult",
     "BackgroundMeta",
     "CaptchaType",

@@ -19,6 +19,9 @@ def main() -> None:
     text_layer_output_json = Path("./text_layer_result.json")
     restored_background_png = Path("./restored_background.png")
     restored_background_json = Path("./restored_background_result.json")
+    background_texture_json = Path("./background_texture_result.json")
+    background_deep_json = Path("./background_deep_result.json")
+    foreground_skew_json = Path("./foreground_skew_result.json")
     glyphs_json = Path("./font_glyphs_result.json")
     glyph_features_json = Path("./font_glyph_features_result.json")
     glyph_slots_json = Path("./font_glyph_slots_result.json")
@@ -80,6 +83,53 @@ def main() -> None:
     print(f"saved: {restored_background_json}")
     print(f"restored background source: {restored_background.get('background_path')}")
     print(f"restored background output: {restored_background.get('output_path')}")
+
+    background_texture = sdk.analyze_background_texture_dict(
+        font_captcha_path,
+        grid_rows=4,
+        grid_cols=4,
+        histogram_bins=16,
+        edge_threshold=18.0,
+    )
+    background_texture_json.write_text(
+        json.dumps(background_texture, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"saved: {background_texture_json}")
+    print(
+        f"background texture entropy/edge_density: "
+        f"{background_texture['entropy']:.4f}/{background_texture['edge_density']:.4f}"
+    )
+
+    background_deep = sdk.extract_background_deep_features_dict(
+        font_captcha_path,
+        levels=(1, 2, 4),
+        edge_threshold=18.0,
+    )
+    background_deep_json.write_text(
+        json.dumps(background_deep, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"saved: {background_deep_json}")
+    print(
+        f"background deep levels/vector length: "
+        f"{background_deep['levels']}/{len(background_deep['vector_1d'])}"
+    )
+
+    foreground_skew = sdk.estimate_foreground_skew_dict(
+        font_captcha_path,
+        min_pixels=20,
+        max_abs_angle=45.0,
+    )
+    foreground_skew_json.write_text(
+        json.dumps(foreground_skew, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"saved: {foreground_skew_json}")
+    print(
+        f"foreground skew angle/confidence: "
+        f"{foreground_skew['angle_degrees']:.2f}/{foreground_skew['confidence']:.2f}"
+    )
 
     glyphs = sdk.extract_font_glyphs_dict(
         font_captcha_path,

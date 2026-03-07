@@ -272,4 +272,40 @@ class FontGlyphImageExportResult:
     stats: Dict[str, int]
 
 
+@dataclass
+class BackgroundTextureResult:
+    group_id: str
+    background_path: str
+    image_size: Tuple[int, int]
+    mean_intensity: float
+    std_intensity: float
+    entropy: float
+    edge_density: float
+    histogram: List[float]
+    grid_energy: List[float]
+    stats: Dict[str, float]
+
+
+@dataclass
+class BackgroundDeepFeatureResult:
+    group_id: str
+    background_path: str
+    image_size: Tuple[int, int]
+    levels: List[int]
+    patch_count: int
+    vector_1d: List[float]
+    stats: Dict[str, float]
+
+
+@dataclass
+class ForegroundSkewEstimateResult:
+    group_id: str
+    background_path: str
+    image_size: Tuple[int, int]
+    angle_degrees: float
+    confidence: float
+    pixel_count: int
+    eigen_ratio: float
+
+
 RecognitionResult = Union[LocateResult, SliderLocateResult, TextLocateResult]
