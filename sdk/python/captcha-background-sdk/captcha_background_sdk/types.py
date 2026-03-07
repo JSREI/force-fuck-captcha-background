@@ -308,4 +308,19 @@ class ForegroundSkewEstimateResult:
     eigen_ratio: float
 
 
+@dataclass
+class CaptchaAutoResult:
+    detected_type: Literal["text", "slider", "unknown"]
+    confidence: float
+    reason: str
+    group_id: str
+    background_path: str
+    image_size: Tuple[int, int]
+    text_score: float
+    slider_score: float
+    text_payload: Optional[Dict]
+    slider_payload: Optional[Dict]
+    stats: Dict[str, float]
+
+
 RecognitionResult = Union[LocateResult, SliderLocateResult, TextLocateResult]

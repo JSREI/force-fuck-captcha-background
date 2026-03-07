@@ -69,6 +69,8 @@ PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-backgroun
 - `export_font_glyph_dataset_npz(input_dir, output_npz_path, target_width=32, target_height=32, ...)`
 - `recognize_slider(captcha_path)`
 - `run_local_restore(input_dir, output_dir, clear_output_before_run=False, recursive=True, max_error_items=200, progress_callback=None, stop_checker=None)`
+- `recognize_auto(captcha_path, background_dir=None, ...)`
+- `recognize_auto_dict(captcha_path, background_dir=None, ...)`
 - `analyze_background_texture(captcha_path, grid_rows=4, grid_cols=4, histogram_bins=16, edge_threshold=18.0)`
 - `extract_background_deep_features(captcha_path, levels=(1,2,4), edge_threshold=18.0)`
 - `estimate_foreground_skew(captcha_path, min_pixels=20, max_abs_angle=45.0)`
@@ -104,6 +106,44 @@ PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-backgroun
 
 - `CaptchaRecognizer.run_local_restore(...)`
 - `CaptchaRecognizer.run_local_restore_dict(...)`
+
+## Core Production API (Type + Extraction in One Call)
+
+If your workflow is:
+1) input captcha image + background folder,
+2) decide captcha type (text vs slider),
+3) output extraction payload,
+
+then use:
+
+- `recognize_auto_dict(...)`
+
+It returns:
+- `detected_type`: `text` / `slider` / `unknown`
+- `confidence`: decision confidence score `0..1`
+- `text_payload.locate.regions`: text box list
+- `text_payload.components.components`: raw connected components for text-like foreground
+- `text_payload.text_layer`: optional extracted text-layer PNG
+- `text_payload.glyph_images`: optional per-glyph cropped PNGs
+- `slider_payload.locate.gap`: slider gap bbox/center
+- `slider_payload.gap_patch`: optional cropped gap patch from captcha image
+- `slider_payload.background_patch`: optional cropped patch from background image
+
+Example:
+
+```python
+auto = sdk.recognize_auto_dict(
+    captcha_path="/path/to/captcha.png",
+    background_dir="/path/to/backgrounds",
+    include_pixels=True,
+    text_layer_output_path="./auto_text_layer.png",
+    text_glyph_output_dir="./auto_text_glyphs",
+    slider_gap_output_path="./auto_slider_gap_patch.png",
+    slider_background_patch_output_path="./auto_slider_background_patch.png",
+    slider_patch_padding=2,
+)
+print(auto["detected_type"], auto["confidence"])
+```
 
 ## Quick examples
 

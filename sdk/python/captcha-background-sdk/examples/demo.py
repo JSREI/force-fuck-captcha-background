@@ -13,6 +13,7 @@ def main() -> None:
     local_restore_output_dir = "/path/to/local_restore_output"
     font_captcha_path = "/path/to/new_font_captcha.png"
     slider_captcha_path = "/path/to/new_slider_captcha.png"
+    auto_result_json = Path("./auto_result.json")
     font_output_json = Path("./font_locate_result.json")
     text_positions_output_json = Path("./text_positions_result.json")
     text_layer_output_png = Path("./text_layer.png")
@@ -48,6 +49,22 @@ def main() -> None:
     )
     index = sdk.build_background_index(backgrounds_dir, recursive=True)
     print(f"indexed backgrounds: {len(index)}")
+
+    auto_result = sdk.recognize_auto_dict(
+        captcha_path=font_captcha_path,
+        include_pixels=True,
+        text_layer_output_path="./auto_text_layer.png",
+        text_glyph_output_dir="./auto_text_glyphs",
+        slider_gap_output_path="./auto_slider_gap_patch.png",
+        slider_background_patch_output_path="./auto_slider_background_patch.png",
+        slider_patch_padding=2,
+    )
+    auto_result_json.write_text(json.dumps(auto_result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"saved: {auto_result_json}")
+    print(
+        f"auto detect type/confidence: "
+        f"{auto_result['detected_type']}/{auto_result['confidence']:.2f}"
+    )
 
     font_result = sdk.recognize_font_dict(font_captcha_path, include_pixels=True)
     font_output_json.write_text(json.dumps(font_result, ensure_ascii=False, indent=2), encoding="utf-8")

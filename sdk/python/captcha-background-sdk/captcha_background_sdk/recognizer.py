@@ -20,8 +20,10 @@ from .foreground_skew import estimate_foreground_skew as estimate_foreground_ske
 from .local_restore_runner import run_local_restore
 from .local_restore_types import LocalRestoreConfig, ProgressCallback, StopChecker
 from .locator import CaptchaFontLocator
+from .patch_extractor import extract_patch
 from .slider_locator import CaptchaSliderLocator
 from .types import (
+    CaptchaAutoResult,
     BackgroundDeepFeatureResult,
     BackgroundMeta,
     BackgroundTextureResult,
@@ -82,6 +84,77 @@ class CaptchaRecognizer:
     ) -> tuple[str, str, tuple[int, int]]:
         restored = self.font.restore_background(captcha_path=captcha_path, output_path=None)
         return restored.group_id, restored.background_path, restored.image_size
+
+    @staticmethod
+    def _clamp01(value: float) -> float:
+        return max(0.0, min(1.0, value))
+
+    def _decide_captcha_type(
+        self,
+        text_region_count: int,
+        text_pixel_count: int,
+        font_component_count: int,
+        font_component_pixels: int,
+        slider_region_count: int,
+        slider_gap_pixels: int,
+        slider_gap_width: int,
+        slider_gap_height: int,
+    ) -> tuple[str, float, float, float, str]:
+        text_score = 0.0
+        slider_score = 0.0
+
+        if font_component_count > 0:
+            text_score += min(float(font_component_count), 10.0) * 0.9
+        if font_component_count >= 3:
+            text_score += 2.0
+        text_score += min(float(font_component_pixels) / 120.0, 6.0)
+
+        if text_region_count > 0:
+            text_score += min(float(text_region_count), 8.0) * 1.2
+        if 2 <= text_region_count <= 8:
+            text_score += 2.0
+        text_score += min(float(text_pixel_count) / 70.0, 8.0)
+
+        if slider_gap_pixels > 0:
+            if slider_gap_pixels >= 180:
+                slider_score += 3.0 + min(float(slider_gap_pixels) / 80.0, 10.0)
+            else:
+                slider_score += min(float(slider_gap_pixels) / 120.0, 1.5)
+        slider_score += min(float(slider_region_count), 6.0) * 0.6
+        if slider_gap_width > 0 and slider_gap_height > 0:
+            ratio = min(slider_gap_width, slider_gap_height) / max(slider_gap_width, slider_gap_height)
+            slider_score += ratio * 2.0
+            if ratio < 0.6:
+                slider_score -= 0.8
+
+        if slider_gap_pixels > 0 and text_region_count <= 1 and font_component_count <= 1:
+            text_score -= 1.5
+        if (text_region_count >= 3 or font_component_count >= 3) and slider_gap_pixels > 0:
+            slider_score -= 1.0
+        if 0 < slider_gap_pixels < 180:
+            slider_score -= 1.0
+            if text_region_count >= 1:
+                text_score += 1.2
+
+        detected_type = "unknown"
+        reason = "insufficient foreground evidence for text or slider"
+        if text_score > slider_score and text_score > 1.0:
+            detected_type = "text"
+            reason = (
+                f"text_score={text_score:.2f} > slider_score={slider_score:.2f}; "
+                f"font_components={font_component_count}, region_count={text_region_count}, text_pixels={text_pixel_count}"
+            )
+        elif slider_score > text_score and slider_score > 1.0:
+            detected_type = "slider"
+            reason = (
+                f"slider_score={slider_score:.2f} > text_score={text_score:.2f}; "
+                f"gap_pixels={slider_gap_pixels}, slider_regions={slider_region_count}, "
+                f"gap_size={slider_gap_width}x{slider_gap_height}, font_components={font_component_count}"
+            )
+
+        denom = max(1.0, abs(text_score) + abs(slider_score))
+        confidence = self._clamp01(abs(text_score - slider_score) / denom)
+        return detected_type, text_score, slider_score, confidence, reason
 
     def build_background_index(
         self,
@@ -410,6 +483,143 @@ class CaptchaRecognizer:
                 limit=limit,
                 continue_on_error=continue_on_error,
                 output_json_path=output_json_path,
+            )
+        )
+
+    def recognize_auto(
+        self,
+        captcha_path: str,
+        background_dir: Optional[str] = None,
+        include_pixels: bool = True,
+        text_layer_output_path: Optional[str] = None,
+        text_glyph_output_dir: Optional[str] = None,
+        slider_gap_output_path: Optional[str] = None,
+        slider_background_patch_output_path: Optional[str] = None,
+        slider_patch_padding: int = 2,
+    ) -> CaptchaAutoResult:
+        if background_dir:
+            self.build_background_index(background_dir)
+
+        text_result = self.recognize_text_positions(
+            captcha_path=captcha_path,
+            include_pixels=include_pixels,
+        )
+        font_result = self.recognize_font(
+            captcha_path=captcha_path,
+            include_pixels=include_pixels,
+        )
+        slider_result = self.recognize_slider(captcha_path=captcha_path)
+
+        text_region_count = int(text_result.stats.get("region_count", 0))
+        text_pixel_count = int(text_result.stats.get("text_pixel_count", 0))
+        font_component_count = int(font_result.stats.get("component_count", 0))
+        font_component_pixels = int(sum(component.pixel_count for component in font_result.components))
+        slider_region_count = int(slider_result.stats.get("region_count", 0))
+        slider_gap_pixels = int(slider_result.gap.pixel_count) if slider_result.gap else 0
+        slider_gap_width = 0
+        slider_gap_height = 0
+        if slider_result.gap:
+            left, top, right, bottom = slider_result.gap.bbox
+            slider_gap_width = right - left + 1
+            slider_gap_height = bottom - top + 1
+
+        detected_type, text_score, slider_score, confidence, reason = self._decide_captcha_type(
+            text_region_count=text_region_count,
+            text_pixel_count=text_pixel_count,
+            font_component_count=font_component_count,
+            font_component_pixels=font_component_pixels,
+            slider_region_count=slider_region_count,
+            slider_gap_pixels=slider_gap_pixels,
+            slider_gap_width=slider_gap_width,
+            slider_gap_height=slider_gap_height,
+        )
+
+        text_payload: Dict = {
+            "locate": asdict(text_result),
+            "components": asdict(font_result),
+        }
+        if text_layer_output_path:
+            text_payload["text_layer"] = self.extract_text_layer_dict(
+                captcha_path=captcha_path,
+                output_path=text_layer_output_path,
+                crop_to_content=False,
+            )
+        else:
+            text_payload["text_layer"] = None
+        if text_glyph_output_dir:
+            text_payload["glyph_images"] = self.export_text_glyph_images_dict(
+                captcha_path=captcha_path,
+                output_dir=text_glyph_output_dir,
+                render_mode=GlyphRenderMode.ORIGINAL,
+            )
+        else:
+            text_payload["glyph_images"] = None
+
+        slider_payload: Dict = {"locate": asdict(slider_result)}
+        gap_patch = None
+        background_patch = None
+        if slider_result.gap:
+            if slider_gap_output_path:
+                gap_patch = extract_patch(
+                    image_path=captcha_path,
+                    bbox=slider_result.gap.bbox,
+                    output_path=slider_gap_output_path,
+                    padding=slider_patch_padding,
+                )
+            if slider_background_patch_output_path:
+                background_patch = extract_patch(
+                    image_path=slider_result.background_path,
+                    bbox=slider_result.gap.bbox,
+                    output_path=slider_background_patch_output_path,
+                    padding=slider_patch_padding,
+                )
+        slider_payload["gap_patch"] = gap_patch
+        slider_payload["background_patch"] = background_patch
+
+        return CaptchaAutoResult(
+            detected_type=detected_type,  # text | slider | unknown
+            confidence=confidence,
+            reason=reason,
+            group_id=text_result.group_id,
+            background_path=text_result.background_path,
+            image_size=text_result.image_size,
+            text_score=text_score,
+            slider_score=slider_score,
+            text_payload=text_payload,
+            slider_payload=slider_payload,
+            stats={
+                "text_region_count": float(text_region_count),
+                "text_pixel_count": float(text_pixel_count),
+                "font_component_count": float(font_component_count),
+                "font_component_pixels": float(font_component_pixels),
+                "slider_region_count": float(slider_region_count),
+                "slider_gap_pixels": float(slider_gap_pixels),
+                "slider_gap_width": float(slider_gap_width),
+                "slider_gap_height": float(slider_gap_height),
+            },
+        )
+
+    def recognize_auto_dict(
+        self,
+        captcha_path: str,
+        background_dir: Optional[str] = None,
+        include_pixels: bool = True,
+        text_layer_output_path: Optional[str] = None,
+        text_glyph_output_dir: Optional[str] = None,
+        slider_gap_output_path: Optional[str] = None,
+        slider_background_patch_output_path: Optional[str] = None,
+        slider_patch_padding: int = 2,
+    ) -> Dict:
+        return asdict(
+            self.recognize_auto(
+                captcha_path=captcha_path,
+                background_dir=background_dir,
+                include_pixels=include_pixels,
+                text_layer_output_path=text_layer_output_path,
+                text_glyph_output_dir=text_glyph_output_dir,
+                slider_gap_output_path=slider_gap_output_path,
+                slider_background_patch_output_path=slider_background_patch_output_path,
+                slider_patch_padding=slider_patch_padding,
             )
         )
 
