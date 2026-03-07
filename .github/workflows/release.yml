@@ -303,9 +303,9 @@ jobs:
           set -euo pipefail
 
           python_dist="$(find release-assets/python-dist -maxdepth 1 -type f | sort)"
-          mac_installers="$(find release-assets/electron-release-macos-latest -type f \( -name '*.dmg' -o -name '*.zip' \) | sort)"
-          windows_installers="$(find release-assets/electron-release-windows-latest -type f -name '*.exe' | sort)"
-          linux_installers="$(find release-assets/electron-release-ubuntu-latest -type f \( -name '*.AppImage' -o -name '*.deb' \) | sort)"
+          mac_installers="$(find release-assets/electron-release-macos-latest -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) | sort)"
+          windows_installers="$(find release-assets/electron-release-windows-latest -maxdepth 1 -type f -name '*.exe' | sort)"
+          linux_installers="$(find release-assets/electron-release-ubuntu-latest -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) | sort)"
           optional_blockmaps="$(find release-assets -type f -name '*.blockmap' | sort)"
 
           if [[ -z "${python_dist}" ]]; then
@@ -350,7 +350,7 @@ jobs:
           cat release-assets/asset-files.txt
 
           {
-            echo "files<<'EOF'"
+            echo "files<<EOF"
             cat release-assets/asset-files.txt
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
