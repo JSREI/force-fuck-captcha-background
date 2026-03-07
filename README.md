@@ -33,3 +33,21 @@ pip install -r requirements.txt
 python examples/demo.py
 ```
 
+### 3) 查看与维护 API 文档（VitePress）
+
+```bash
+cd docs
+npm install
+npm run docs:dev
+```
+
+构建静态站点：
+
+```bash
+cd docs
+npm run docs:build
+```
+
+文档部署由 GitHub Actions 自动执行：
+- 工作流：`.github/workflows/docs-pages.yml`
+- 触发：`push main`、`release published`、`workflow_dispatch`
