@@ -3,33 +3,36 @@ layout: home
 title: Captcha Background SDK 文档
 hero:
   name: "Captcha Background SDK"
-  text: "先判断类型，再提取结果"
-  tagline: "一句话：你给我验证码图，我自动判断是文本还是滑块，并直接返回可用坐标和图块。"
+  text: "同一个 Bucket 多图聚合，输出可复用背景图"
+  tagline: "你给我验证码图和背景目录，SDK 自动完成背景恢复、类型判断与坐标输出。"
   actions:
     - theme: brand
+      text: 在线官网
+      link: https://jsrei.github.io/force-fuck-captcha-background/
+    - theme: alt
       text: 3 分钟上手
       link: /guide/quickstart
     - theme: alt
-      text: 看核心 API
-      link: /api/auto
+      text: 下载 GUI
+      link: https://github.com/JSREI/force-fuck-captcha-background/releases/latest
 features:
   - title: 我们解决什么
-    details: 解决“验证码类型靠猜、坐标字段不统一、产出不可直接用”的问题。
+    details: 解决“验证码类型靠猜、背景难还原、结果字段不好直接用”的问题。
   - title: 我们怎么解决
-    details: 用 recognize_auto_dict 一次调用并行判断 text/slider，统一输出结构。
+    details: 用 recognize_auto_dict 一次调用完成背景恢复与 text/slider 类型路由。
   - title: 你最终拿到什么
-    details: 文本拿 bbox/逐字图，滑块拿缺口 bbox/center/patch，可直接进入业务链路。
+    details: 统一输出结构，文本拿 bbox/逐字图，滑块拿缺口 bbox/center/patch。
 ---
 
-## 首页先说人话
+## 在线官网地址
 
-我们解决的问题是：**你不需要再人工猜验证码类型，也不用自己拼识别链路。**
+- 官网: [https://jsrei.github.io/force-fuck-captcha-background/](https://jsrei.github.io/force-fuck-captcha-background/)
 
-我们的做法是：**输入验证码图（和可选背景目录），SDK 自动完成背景匹配、类型判定、坐标提取，并输出可直接消费的字段和图块文件。**
+## 同一个 Bucket 的真实流程
 
-## 背景还原图（流程示意）
+一句话先说清楚：**同 bucket 多图输入 -> SDK 聚合去噪 -> 1 张可复用背景图输出**。
 
-![背景还原流程示意图](/images/background-restore-flow.svg)
+![同一个 Bucket 的真实流程示例](/images/same-bucket-flow.png)
 
 ## 你应该先看哪页
 

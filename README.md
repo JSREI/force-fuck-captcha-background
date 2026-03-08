@@ -1,6 +1,14 @@
-# JSREI Workspace
+# Captcha Background SDK
 
-这个仓库已按模块拆分为多目录结构，避免 UI 工具和 Python SDK 混在根目录。
+在线官网: https://jsrei.github.io/force-fuck-captcha-background/
+
+这个仓库包含桌面端工具、Python SDK 与文档站点，核心目标是把验证码背景恢复与定位能力标准化。
+
+## 同一个 Bucket 的真实流程示例
+
+一句话：同 bucket 多图输入，SDK 聚合去噪，输出可复用背景图。
+
+![同一个 Bucket 的真实流程示例](docs/public/images/same-bucket-flow.png)
 
 ## 目录划分
 
@@ -33,7 +41,7 @@ pip install -r requirements.txt
 python examples/demo.py
 ```
 
-### 3) 查看与维护 API 文档（VitePress）
+### 3) 查看与维护官网文档（VitePress）
 
 ```bash
 cd docs
@@ -48,6 +56,6 @@ cd docs
 npm run docs:build
 ```
 
-文档部署由 GitHub Actions 自动执行：
+文档部署由 GitHub Actions 自动执行（GitHub Pages）：
 - 工作流：`.github/workflows/docs-pages.yml`
 - 触发：`push main`、`release published`、`workflow_dispatch`
