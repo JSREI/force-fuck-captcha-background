@@ -1,0 +1,63 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#eef2ff"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px 'PingFang SC', 'Microsoft YaHei', sans-serif; fill: #0f172a; }
+      .sub { font: 500 18px 'PingFang SC', 'Microsoft YaHei', sans-serif; fill: #334155; }
+      .card-title { font: 700 20px 'PingFang SC', 'Microsoft YaHei', sans-serif; fill: #0f172a; }
+      .card-text { font: 500 16px 'PingFang SC', 'Microsoft YaHei', sans-serif; fill: #334155; }
+      .small { font: 500 14px 'PingFang SC', 'Microsoft YaHei', sans-serif; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="420" fill="url(#bg)" rx="18"/>
+
+  <text x="48" y="56" class="title">背景还原能力：把验证码还原到可计算的背景坐标体系</text>
+  <text x="48" y="86" class="sub">输入验证码图和背景库，输出类型判定 + 文本/滑块坐标 + 可直接下载的图块</text>
+
+  <g transform="translate(48,130)" filter="url(#shadow)">
+    <rect x="0" y="0" width="320" height="220" rx="16" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="24" y="44" class="card-title">1. 输入</text>
+    <text x="24" y="78" class="card-text">验证码图片</text>
+    <text x="24" y="106" class="card-text">背景目录（可选）</text>
+    <text x="24" y="146" class="small">目标：不让业务方先猜验证码类型</text>
+    <rect x="24" y="164" width="272" height="32" rx="8" fill="#e2e8f0"/>
+    <text x="36" y="186" class="small">recognize_auto_dict(...)</text>
+  </g>
+
+  <g transform="translate(440,130)" filter="url(#shadow)">
+    <rect x="0" y="0" width="320" height="220" rx="16" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="24" y="44" class="card-title">2. 处理</text>
+    <text x="24" y="78" class="card-text">背景匹配 + 前景差分</text>
+    <text x="24" y="106" class="card-text">同时计算 text/slider 证据</text>
+    <text x="24" y="146" class="small">输出 detected_type + confidence + reason</text>
+    <rect x="24" y="164" width="272" height="32" rx="8" fill="#dbeafe"/>
+    <text x="36" y="186" class="small">text_payload / slider_payload</text>
+  </g>
+
+  <g transform="translate(832,130)" filter="url(#shadow)">
+    <rect x="0" y="0" width="320" height="220" rx="16" fill="url(#card)" stroke="#cbd5e1"/>
+    <text x="24" y="44" class="card-title">3. 输出</text>
+    <text x="24" y="78" class="card-text">文本：bbox + 逐字抠图</text>
+    <text x="24" y="106" class="card-text">滑块：缺口 bbox/center/patch</text>
+    <text x="24" y="146" class="small">可以直接喂给后端或前端流程</text>
+    <rect x="24" y="164" width="272" height="32" rx="8" fill="#dcfce7"/>
+    <text x="36" y="186" class="small">坐标统一、字段统一、可下载</text>
+  </g>
+
+  <line x1="368" y1="240" x2="432" y2="240" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="760" y1="240" x2="824" y2="240" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>

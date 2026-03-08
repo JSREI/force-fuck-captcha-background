@@ -17,7 +17,10 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [],
-  "author": "JSREI",
+  "author": {
+    "name": "JSREI",
+    "email": "cc11001100@users.noreply.github.com"
+  },
   "license": "MIT",
   "description": "Desktop UI for captcha background recovery, request replay, and local restore workflows.",
   "devDependencies": {
@@ -84,7 +87,9 @@
         "AppImage",
         "deb"
       ],
-      "category": "Utility"
+      "category": "Utility",
+      "maintainer": "JSREI <cc11001100@users.noreply.github.com>"
     }
-  }
+  },
+  "homepage": "https://github.com/JSREI/force-fuck-captcha-background"
 }

@@ -1,78 +1,97 @@
-# 自动识别主 API
+# 自动识别主 API（线上建议只接这个）
 
-## 方法签名
+## 解决什么问题
 
-```python
-recognize_auto_dict(
-    captcha_path: str,
-    background_dir: Optional[str] = None,
-    include_pixels: bool = True,
-    text_layer_output_path: Optional[str] = None,
-    text_glyph_output_dir: Optional[str] = None,
-    slider_gap_output_path: Optional[str] = None,
-    slider_background_patch_output_path: Optional[str] = None,
-    slider_patch_padding: int = 2,
-) -> Dict
-```
+以前你要先判断验证码类型，再调不同接口。  
+现在一条调用 recognize_auto_dict 直接返回：
 
-## 参数说明
+1. 类型判定：text / slider / unknown
+2. 判定置信度：confidence
+3. 分支结果：text_payload 或 slider_payload
 
-- `captcha_path`: 输入验证码图片路径。
-- `background_dir`: 背景目录；传入时会自动建立背景索引。
-- `include_pixels`: 是否在文本结果中保留像素坐标。
-- `text_layer_output_path`: 文本图层抠图输出路径（可选）。
-- `text_glyph_output_dir`: 逐字抠图输出目录（可选）。
-- `slider_gap_output_path`: 从验证码中抠缺口 patch 的输出路径（可选）。
-- `slider_background_patch_output_path`: 从背景中抠对应 patch 的输出路径（可选）。
-- `slider_patch_padding`: 缺口 patch 额外边缘扩展像素。
+## 调用示例
 
-## 核心输出字段
+from captcha_background_sdk import CaptchaVisionSDK
 
-- `detected_type`: `text` / `slider` / `unknown`
-- `confidence`: 判定置信度 `0..1`
-- `reason`: 判定解释字符串
-- `text_score`, `slider_score`: 两类打分
-- `text_payload`:
-  - `locate`: 文本区域结果（`regions` + `stats`）
-  - `components`: 连通域组件结果
-  - `text_layer`: 可选图层抠图结果
-  - `glyph_images`: 可选逐字图结果
-- `slider_payload`:
-  - `locate.gap`: 缺口位置（`bbox`/`center`/`pixel_count`）
-  - `gap_patch`: 可选验证码 patch 输出
-  - `background_patch`: 可选背景 patch 输出
-- `stats`: 过程统计（region/component/gap 的数量和尺寸）
+sdk = CaptchaVisionSDK()
 
-## 坐标与数值约定
-
-1. bbox 坐标轴：
-- 格式 `[left, top, right, bottom]`
-- `right` 与 `bottom` 为包含端点
-
-2. center：
-- `((left + right) // 2, (top + bottom) // 2)`
-
-3. 置信度：
-- `confidence = |text_score - slider_score| / (|text_score| + |slider_score|)`（归一化后 `0..1`）
-
-## 示例
-
-```python
-auto = sdk.recognize_auto_dict(
+result = sdk.recognize_auto_dict(
     captcha_path="/path/to/captcha.png",
     background_dir="/path/to/backgrounds",
     include_pixels=True,
-    text_layer_output_path="./auto_text_layer.png",
-    text_glyph_output_dir="./auto_text_glyphs",
-    slider_gap_output_path="./auto_slider_gap_patch.png",
-    slider_background_patch_output_path="./auto_slider_background_patch.png",
+    text_layer_output_path="./out/text_layer.png",
+    text_glyph_output_dir="./out/text_glyphs",
+    slider_gap_output_path="./out/slider_gap_patch.png",
+    slider_background_patch_output_path="./out/slider_bg_patch.png",
     slider_patch_padding=2,
 )
 
-if auto["detected_type"] == "text":
-    regions = auto["text_payload"]["locate"]["regions"]
-elif auto["detected_type"] == "slider":
-    gap = auto["slider_payload"]["locate"]["gap"]
-else:
-    print("fallback:", auto["reason"])
-```
+## 顶层输出字段（必须看懂）
+
+| 字段 | 含义 | 常见取值 |
+| --- | --- | --- |
+| detected_type | 本次判定类型 | text / slider / unknown |
+| confidence | 判定置信度，0 到 1 | 例如 0.82 |
+| reason | 判定原因（建议打日志） | 字符串 |
+| text_score | 文本证据分（内部打分） | 浮点数 |
+| slider_score | 滑块证据分（内部打分） | 浮点数 |
+| group_id | 匹配到的背景组 ID | 字符串 |
+| background_path | 匹配到的背景图路径 | 字符串 |
+| image_size | 验证码尺寸 | [width, height] |
+
+## text_payload（判定 text 时重点使用）
+
+1. text_payload.locate
+- regions[]：每个文本区域
+- regions[i].bbox：区域框
+- regions[i].pixel_count：该区域像素数
+- regions[i].score：区域分数
+- stats.region_count：区域数量
+- stats.text_pixel_count：文本像素总量
+
+2. text_payload.components
+- 连通域组件（诊断用）
+- components[].bbox
+- components[].pixel_count
+
+3. text_payload.text_layer（传 text_layer_output_path 才会有）
+- text_bbox：文本整体框
+- text_pixel_count：文本层像素
+- output_path：导出路径
+
+4. text_payload.glyph_images（传 text_glyph_output_dir 才会有）
+- glyph_images[]：逐字图片列表
+- glyph_images[i].image_path：图片路径
+- glyph_images[i].bbox：字块坐标
+
+## slider_payload（判定 slider 时重点使用）
+
+1. slider_payload.locate.gap
+- bbox：缺口框
+- center：缺口中心点
+- pixel_count：缺口像素数
+
+2. slider_payload.gap_patch（传 slider_gap_output_path 才会有）
+- 从验证码图裁的缺口 patch
+- 字段：bbox patch_size output_path
+
+3. slider_payload.background_patch（传 slider_background_patch_output_path 才会有）
+- 从背景图裁的对应 patch
+- 字段：bbox patch_size output_path
+
+## 坐标轴和数值定义（重点）
+
+1. 坐标系
+- 原点左上角 (0,0)。
+- x 向右，y 向下。
+
+2. bbox
+- 格式 [left, top, right, bottom]。
+- right / bottom 是包含端点。
+
+3. center
+- center = ((left + right)//2, (top + bottom)//2)。
+
+4. confidence
+- 公式：abs(text_score - slider_score) / (abs(text_score) + abs(slider_score))
+- 结果已归一化到 0 到 1。

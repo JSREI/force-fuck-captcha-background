@@ -3,28 +3,36 @@ layout: home
 title: Captcha Background SDK 文档
 hero:
   name: "Captcha Background SDK"
-  text: "背景识别 + 文本/滑块类型路由"
-  tagline: "输入验证码 + 背景目录，自动识别类型并返回对应提取结果。"
+  text: "先判断类型，再提取结果"
+  tagline: "一句话：你给我验证码图，我自动判断是文本还是滑块，并直接返回可用坐标和图块。"
   actions:
     - theme: brand
-      text: 快速开始
+      text: 3 分钟上手
       link: /guide/quickstart
     - theme: alt
-      text: 查看主 API
+      text: 看核心 API
       link: /api/auto
 features:
-  - title: 自动类型路由
-    details: 统一入口 recognize_auto_dict，一次请求内决定 text/slider/unknown。
-  - title: 文本验证码处理
-    details: 返回文本区域、连通域组件，并可输出文本图层与逐字抠图。
-  - title: 滑块验证码处理
-    details: 返回缺口 bbox/center，并可导出验证码缺口 patch 和背景对位 patch。
-  - title: 背景深度特征
-    details: 提供纹理统计与多尺度特征向量，便于对接 deep API。
+  - title: 我们解决什么
+    details: 解决“验证码类型靠猜、坐标字段不统一、产出不可直接用”的问题。
+  - title: 我们怎么解决
+    details: 用 recognize_auto_dict 一次调用并行判断 text/slider，统一输出结构。
+  - title: 你最终拿到什么
+    details: 文本拿 bbox/逐字图，滑块拿缺口 bbox/center/patch，可直接进入业务链路。
 ---
 
-## 适用场景
+## 首页先说人话
 
-- 验证码自动化平台中的“背景匹配 + 类型分流”。
-- 统一 SDK 输出给上游服务（识别服务、风控服务、训练平台）。
-- 作为 Python 端标准能力层，配合 UI 或后端服务调用。
+我们解决的问题是：**你不需要再人工猜验证码类型，也不用自己拼识别链路。**
+
+我们的做法是：**输入验证码图（和可选背景目录），SDK 自动完成背景匹配、类型判定、坐标提取，并输出可直接消费的字段和图块文件。**
+
+## 背景还原图（流程示意）
+
+![背景还原流程示意图](/images/background-restore-flow.svg)
+
+## 你应该先看哪页
+
+1. 先看 [快速开始](/guide/quickstart)：3 分钟跑通一个请求。
+2. 再看 [自动识别主 API](/api/auto)：这是线上主入口。
+3. 如果要调阈值，再看 [类型路由策略](/guide/type-routing)。
