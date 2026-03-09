@@ -1,61 +1,41 @@
 # Captcha Background SDK
 
-在线官网: https://jsrei.github.io/force-fuck-captcha-background/
+这个仓库当前以两条主线为主：
 
-这个仓库包含桌面端工具、Python SDK 与文档站点，核心目标是把验证码背景恢复与定位能力标准化。
-
-## 同一个 Bucket 的真实流程示例
-
-一句话：同 bucket 多图输入，SDK 聚合去噪，输出可复用背景图。
-
-![同一个 Bucket 的真实流程示例](docs/public/images/same-bucket-flow.png)
+1. TypeScript + React + Ant Design 前端（位于 apps/electron-ui）
+2. Python SDK（位于 sdk/python/captcha-background-sdk）
 
 ## 目录划分
 
-```text
-.
-├── apps/
-│   └── electron-ui/              # Electron + React 桌面界面工具
-├── sdk/
-│   └── python/
-│       └── captcha-background-sdk/     # Python SDK（背景映射 + 字体定位）
-├── LICENSE
-└── README.md
-```
+- apps/electron-ui
+  - TypeScript + React + Ant Design（当前官网前端基础版本）
+  - 前端源码在 apps/electron-ui/src/renderer
+- sdk/python/captcha-background-sdk
+  - Python SDK（背景映射 + 字体定位）
 
-## 快速使用
+## 你要继续开发的官网前端路径
 
-### 1) 启动界面工具
+- 前端源码目录：apps/electron-ui/src/renderer
+- React 入口：apps/electron-ui/src/renderer/index.tsx
+- 页面主组件：apps/electron-ui/src/renderer/App.tsx
+- 通用组件目录：apps/electron-ui/src/renderer/components
 
-```bash
-cd apps/electron-ui
-npm install
-npm run dev
-```
+## 本地开发
 
-### 2) 使用 Python SDK
+### 1) 前端开发（仅开 webpack dev server）
 
-```bash
-cd sdk/python/captcha-background-sdk
-pip install -r requirements.txt
-python examples/demo.py
-```
+- cd apps/electron-ui
+- npm install
+- npm run dev:webpack
+- 默认地址：http://localhost:9000
 
-### 3) 查看与维护官网文档（VitePress）
+### 2) 桌面端联调（Electron + 前端）
 
-```bash
-cd docs
-npm install
-npm run docs:dev
-```
+- cd apps/electron-ui
+- npm run dev
 
-构建静态站点：
+### 3) 使用 Python SDK
 
-```bash
-cd docs
-npm run docs:build
-```
-
-文档部署由 GitHub Actions 自动执行（GitHub Pages）：
-- 工作流：`.github/workflows/docs-pages.yml`
-- 触发：`push main`、`release published`、`workflow_dispatch`
+- cd sdk/python/captcha-background-sdk
+- pip install -r requirements.txt
+- python examples/demo.py
