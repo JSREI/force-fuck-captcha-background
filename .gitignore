@@ -63,3 +63,4 @@ doc-website/.vitepress/cache/
 # Local service runtime
 .pm2/
 .codex-service-port
+.codex-service-port-*

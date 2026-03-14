@@ -2,15 +2,55 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$ROOT_DIR/electron-ui"
-APP_NAME="${START_SERVICE_NAME:-force-captcha-frontend}"
-PORT_FILE="$ROOT_DIR/.codex-service-port"
-DEFAULT_PORT="9000"
+TARGET="${START_SERVICE_TARGET:-electron-ui}"
+APP_NAME="${START_SERVICE_NAME:-}"
+APP_DIR=""
+PORT_FILE=""
+RUN_SCRIPT=""
+RUN_ARGS=()
+PROBE_PATH="/"
+HEALTH_PATH=""
+API_PATH=""
+
+case "$TARGET" in
+  electron-ui)
+    APP_DIR="$ROOT_DIR/electron-ui"
+    APP_NAME="${APP_NAME:-force-captcha-electron-ui}"
+    RUN_SCRIPT="dev:webpack"
+    RUN_ARGS=(--host 127.0.0.1 --port)
+    PORT_FILE="$ROOT_DIR/.codex-service-port-electron-ui"
+    PROBE_PATH="/"
+    HEALTH_PATH="/health"
+    API_PATH="/api"
+    ;;
+  doc-website|docs|website)
+    APP_DIR="$ROOT_DIR/doc-website"
+    APP_NAME="${APP_NAME:-force-captcha-docs}"
+    RUN_SCRIPT="docs:dev"
+    RUN_ARGS=(--host 127.0.0.1 --port)
+    PORT_FILE="$ROOT_DIR/.codex-service-port-docs"
+    PROBE_PATH="/"
+    ;;
+  *)
+    echo "ERROR: Unknown START_SERVICE_TARGET '$TARGET' (expected: electron-ui | doc-website)"
+    exit 1
+    ;;
+esac
 
 if [ ! -f "$APP_DIR/package.json" ]; then
   echo "ERROR: Missing $APP_DIR/package.json"
   exit 1
 fi
+
+derive_port() {
+  local seed="$1"
+  local min=41000
+  local max=49999
+  local span=$((max - min + 1))
+  local hash
+  hash="$(printf '%s' "$seed" | cksum | awk '{print $1}')"
+  echo $((min + (hash % span)))
+}
 
 resolve_port() {
   if [ -n "${START_SERVICE_PORT:-}" ]; then
@@ -19,7 +59,7 @@ resolve_port() {
   fi
 
   local config_port=""
-  if [ -f "$APP_DIR/webpack.config.js" ]; then
+  if [ "$TARGET" = "electron-ui" ] && [ -f "$APP_DIR/webpack.config.js" ]; then
     config_port="$(rg -oN "port:\\s*[0-9]+" "$APP_DIR/webpack.config.js" 2>/dev/null | head -n1 | rg -oN "[0-9]+" || true)"
   fi
   if [ -n "$config_port" ]; then
@@ -36,7 +76,7 @@ resolve_port() {
     fi
   fi
 
-  echo "$DEFAULT_PORT"
+  echo "$(derive_port "$ROOT_DIR:$TARGET")"
 }
 
 PORT="$(resolve_port)"
@@ -132,7 +172,7 @@ start_or_restart() {
   if PM2_HOME="$PM2_HOME" pm2 describe "$APP_NAME" >/dev/null 2>&1; then
     PM2_HOME="$PM2_HOME" pm2 restart "$APP_NAME" --update-env
   else
-    PM2_HOME="$PM2_HOME" pm2 start npm --name "$APP_NAME" --cwd "$APP_DIR" -- run dev:webpack -- --host 127.0.0.1 --port "$PORT"
+    PM2_HOME="$PM2_HOME" pm2 start npm --name "$APP_NAME" --cwd "$APP_DIR" -- run "$RUN_SCRIPT" -- "${RUN_ARGS[@]}" "$PORT"
   fi
 }
 
@@ -171,7 +211,7 @@ validate_runtime() {
 
   local code=""
   for _ in 1 2 3 4 5 6 7 8 9 10; do
-    code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "http://127.0.0.1:$PORT/" || true)"
+    code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "http://127.0.0.1:$PORT$PROBE_PATH" || true)"
     if [[ "$code" =~ ^2|3 ]]; then
       break
     fi
@@ -179,7 +219,7 @@ validate_runtime() {
   done
 
   if [[ ! "$code" =~ ^2|3 ]]; then
-    echo "Validation failed: HTTP probe on / returned $code"
+    echo "Validation failed: HTTP probe on ${PROBE_PATH} returned $code"
     return 1
   fi
 
@@ -208,5 +248,9 @@ done
 echo "service_name=$APP_NAME"
 echo "service_url=http://127.0.0.1:$PORT/"
 echo "frontend_url=http://127.0.0.1:$PORT/"
-echo "health_url=http://127.0.0.1:$PORT/health"
-echo "api_base_url=http://127.0.0.1:$PORT/api"
+if [ -n "$HEALTH_PATH" ]; then
+  echo "health_url=http://127.0.0.1:$PORT$HEALTH_PATH"
+fi
+if [ -n "$API_PATH" ]; then
+  echo "api_base_url=http://127.0.0.1:$PORT$API_PATH"
+fi
