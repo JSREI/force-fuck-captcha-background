@@ -142,7 +142,7 @@ const App: React.FC = () => {
         </div>
         <Row gutter={[16, 16]}>
           {principles.map((item) => (
-            <Col xs={24} lg={12} key={item.title}>
+            <Col xs={24} key={item.title}>
               <div className="flat-card principle-card">
                 <div className="principle-media">
                   <img src={item.image} alt={item.alt} className="principle-image" />
