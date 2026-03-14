@@ -121,6 +121,7 @@ const App: React.FC = () => {
             面向验证码背景还原与字体定位的本地优先工具链。通过可复现算法与可解释统计，
             帮助你快速搭建批量处理与模板复用流程。
           </Paragraph>
+          <Text type="secondary">支持 Python SDK 调用，可直接接入你的数据处理流水线。</Text>
           <Space wrap className="hero-actions">
             <Button type="primary" size="large" href="#quick-start">快速开始</Button>
             <Button size="large" href="#sdk">SDK 能力</Button>
