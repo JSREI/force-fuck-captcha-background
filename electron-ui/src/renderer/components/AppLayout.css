@@ -9,7 +9,8 @@
   padding: 0 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
@@ -21,9 +22,33 @@
   margin: 0 !important;
 }
 
+.header-nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.header-menu {
+  background: transparent !important;
+  color: #fff;
+  border-bottom: none;
+  min-width: 180px;
+}
+
+.header-menu .ant-menu-item,
+.header-menu .ant-menu-submenu-title {
+  color: #fff !important;
+}
+
+.header-menu .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
 .header-right {
   display: flex;
   align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .app-content {
