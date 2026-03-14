@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { GithubOutlined, StarOutlined } from '@ant-design/icons';
 import './GitHubStar.css';
 
@@ -66,22 +66,29 @@ const GitHubStar: React.FC = () => {
     }
   };
 
+  const label = stars !== null ? (
+    <span>
+      <StarOutlined /> {stars}
+    </span>
+  ) : (
+    <span>
+      <StarOutlined /> --
+    </span>
+  );
+
   return (
-    <Button 
-      type="link" 
-      className="github-star-button" 
-      onClick={openGitHubRepo} 
-      icon={<GithubOutlined />}
-      loading={loading}
-    >
-      {stars !== null ? (
-        <span>
-          <StarOutlined /> {stars}
-        </span>
-      ) : (
-        <span>GitHub</span>
-      )}
-    </Button>
+    <Tooltip title="去 GitHub 点个 Star 支持我们">
+      <Button
+        type="link"
+        className="github-star-button"
+        onClick={openGitHubRepo}
+        icon={<GithubOutlined />}
+        loading={loading}
+        aria-label="去 GitHub 点个 Star 支持我们"
+      >
+        {label}
+      </Button>
+    </Tooltip>
   );
 };
 
