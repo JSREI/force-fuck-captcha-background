@@ -11,8 +11,8 @@ const REPO_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}`;
 // 缓存键名
 const CACHE_KEY = 'github_stars';
 const CACHE_EXPIRY_KEY = 'github_stars_expiry';
-// 缓存有效期（1小时）
-const CACHE_DURATION = 60 * 60 * 1000;
+// 缓存有效期（30分钟）
+const CACHE_DURATION = 30 * 60 * 1000;
 
 const GitHubStar: React.FC = () => {
   const [stars, setStars] = useState<number | null>(null);
@@ -48,6 +48,10 @@ const GitHubStar: React.FC = () => {
         }
       } catch (error) {
         console.error('获取 GitHub 仓库信息出错:', error);
+        // 拉取失败时回退到缓存（即使已过期）
+        if (cachedStars) {
+          setStars(parseInt(cachedStars));
+        }
       } finally {
         setLoading(false);
       }
