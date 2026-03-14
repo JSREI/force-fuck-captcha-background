@@ -1,14 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 
-export async function scanAllFiles(dirPath: string): Promise<string[]> {
+export async function scanAllFiles(dirPath: string, recursive: boolean = true): Promise<string[]> {
   const files: string[] = [];
   const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
 
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await scanAllFiles(fullPath));
+      if (recursive) {
+        files.push(...await scanAllFiles(fullPath, recursive));
+      }
     } else if (entry.isFile()) {
       files.push(fullPath);
     }

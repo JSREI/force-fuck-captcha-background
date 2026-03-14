@@ -1,19 +1,11 @@
 # Captcha Background SDK (TypeScript)
 
-> TypeScript SDK 通过 Python SDK 作为底层实现，保证能力对齐。
+> 纯 TypeScript 实现，功能与 Python SDK 对齐。
 
 ## 依赖
 
 - Node.js >= 18
-- Python 3（可执行命令默认为 `python3`）
-- 本仓库内的 `python-sdk/`（或已 `pip install captcha-background-sdk`）
-
-如需指定 Python 路径：
-
-```bash
-export CAPTCHA_SDK_PYTHON_BIN=python3
-export CAPTCHA_SDK_PYTHONPATH=/absolute/path/to/python-sdk
-```
+- 本地安装 `sharp` 运行时依赖（已在 package.json 内声明）
 
 ## 安装（本地开发）
 
@@ -47,8 +39,8 @@ console.log(summary, auto);
 
 ## 已封装 API
 
-- `CaptchaVisionSDK`（对齐 Python SDK 的公开方法）
+- `CaptchaVisionSDK`
 - `CaptchaTextLocator`
 - `CaptchaGapLocator`
 
-说明：`CaptchaVisionSDK` 的所有方法会调用 Python SDK，保持行为一致。
+说明：TypeScript SDK 不依赖 Python。功能对齐 Python SDK 的全部公开方法。

@@ -22,7 +22,7 @@ export async function executeLocalRestoreRun(params: ExecuteLocalRestoreRunParam
 
   await fs.promises.mkdir(config.outputDir, { recursive: true });
 
-  const allFiles = await scanAllFiles(config.inputDir);
+  const allFiles = await scanAllFiles(config.inputDir, config.recursive ?? true);
   const imageFiles = allFiles.filter((filePath) => IMAGE_EXTENSIONS.has(path.extname(filePath).toLowerCase()));
   status.totalFiles = allFiles.length;
   status.imageFiles = imageFiles.length;

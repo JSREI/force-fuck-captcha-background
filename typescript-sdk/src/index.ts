@@ -3,7 +3,5 @@ export {
   CaptchaVisionSDK,
   CaptchaTextLocator,
   CaptchaGapLocator,
-  runLocalRestore
+  CaptchaRecognizer,
 } from './sdk';
-
-export const CaptchaRecognizer = CaptchaVisionSDK;
