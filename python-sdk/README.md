@@ -14,13 +14,13 @@ Backward-compatible import namespace:
 
 From source:
 
-    cd sdk/python/captcha-background-sdk
+    cd python-sdk
     pip install -e .
 
 If you run scripts from repo root, add SDK dir to `PYTHONPATH`:
 
 ```bash
-PYTHONPATH=sdk/python/captcha-background-sdk python sdk/python/captcha-background-sdk/examples/demo.py
+PYTHONPATH=python-sdk python python-sdk/examples/demo.py
 ```
 
 ## What this SDK does

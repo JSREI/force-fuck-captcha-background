@@ -5,7 +5,7 @@
 Publishing a GitHub Release triggers one GitHub Actions workflow that:
 
 1. Generates or refreshes the release notes.
-2. Builds the Python SDK distribution under sdk/python/captcha-background-sdk.
+2. Builds the Python SDK distribution under python-sdk.
 3. Publishes the SDK to PyPI.
 4. Builds Electron desktop packages for macOS, Windows, and Linux.
 5. Uploads both the Python artifacts and Electron installers to the GitHub Release assets.
@@ -32,7 +32,7 @@ The workflow uses the token with username __token__.
 
 Before publishing a release:
 
-1. Update sdk/python/captcha-background-sdk/captcha_background_sdk/__init__.py so __version__ matches the release tag.
+1. Update python-sdk/captcha_background_sdk/__init__.py so __version__ matches the release tag.
 2. Commit and push the version change.
 3. Create and publish a GitHub Release with tag format vX.Y.Z.
 

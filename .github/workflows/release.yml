@@ -68,12 +68,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -d "sdk/python/captcha-background-sdk" ]]; then
-            sdk_dir="sdk/python/captcha-background-sdk"
-          elif [[ -d "sdk/python/captcha-font-sdk" ]]; then
-            sdk_dir="sdk/python/captcha-font-sdk"
+          if [[ -d "python-sdk" ]]; then
+            sdk_dir="python-sdk"
           else
-            echo "::error::No supported Python SDK directory found under sdk/python/."
+            echo "::error::No supported Python SDK directory found at python-sdk."
             exit 1
           fi
 
@@ -197,7 +195,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: apps/electron-ui
+        working-directory: electron-ui
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -209,7 +207,7 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: apps/electron-ui/package-lock.json
+          cache-dependency-path: electron-ui/package-lock.json
 
       - name: Set up Python for native module builds
         uses: actions/setup-python@v5
@@ -269,12 +267,12 @@ jobs:
         with:
           name: electron-release-${{ matrix.os }}
           path: |
-            apps/electron-ui/release/**/*.dmg
-            apps/electron-ui/release/**/*.zip
-            apps/electron-ui/release/**/*.exe
-            apps/electron-ui/release/**/*.AppImage
-            apps/electron-ui/release/**/*.deb
-            apps/electron-ui/release/**/*.blockmap
+            electron-ui/release/**/*.dmg
+            electron-ui/release/**/*.zip
+            electron-ui/release/**/*.exe
+            electron-ui/release/**/*.AppImage
+            electron-ui/release/**/*.deb
+            electron-ui/release/**/*.blockmap
           if-no-files-found: error
 
   upload_release_assets:

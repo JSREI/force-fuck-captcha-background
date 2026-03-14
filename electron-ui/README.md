@@ -5,7 +5,7 @@
 ## 运行
 
 ```bash
-cd apps/electron-ui
+cd electron-ui
 npm install
 npm run dev
 ```
@@ -13,7 +13,7 @@ npm run dev
 ## 构建
 
 ```bash
-cd apps/electron-ui
+cd electron-ui
 npm run build:webpack
 npm run build
 ```
@@ -21,7 +21,7 @@ npm run build
 ## 目录
 
 ```text
-apps/electron-ui/
+electron-ui/
 ├── src/
 │   ├── main/
 │   └── renderer/
