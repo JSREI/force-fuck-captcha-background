@@ -8,8 +8,8 @@ import RunSummaryPanel from './components/local-restore/RunSummaryPanel';
 import RunHistoryPanel from './components/local-restore/RunHistoryPanel';
 import { statusColorMap } from './modules/local-restore/constants';
 import { useLocalRestoreController } from './modules/local-restore/useLocalRestoreController';
-import bucketFlowImage from './assets/same-bucket-flow.png';
-import restoreFlowImage from './assets/background-restore-flow.svg';
+const bucketFlowImage = require('./assets/same-bucket-flow.png') as string;
+const restoreFlowImage = require('./assets/background-restore-flow.svg') as string;
 
 const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
