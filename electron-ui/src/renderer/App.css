@@ -104,17 +104,17 @@
 .principle-media {
   background: #f4f6fb;
   border-radius: 10px;
-  padding: 12px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 320px;
+  min-height: 460px;
 }
 
 .principle-image {
   width: 100%;
   height: auto;
-  max-height: 420px;
+  max-height: 560px;
   object-fit: contain;
 }
 
@@ -130,7 +130,7 @@
   }
 
   .principle-media {
-    min-height: 220px;
+    min-height: 280px;
   }
 }
 
