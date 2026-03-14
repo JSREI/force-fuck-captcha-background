@@ -41,6 +41,12 @@ export function createWindow(): BrowserWindow {
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
     logger.error('内容加载失败:', errorCode, errorDescription);
   });
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    logger.debug(`renderer(console:${level}) ${message} (${sourceId}:${line})`);
+  });
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    logger.error('渲染进程异常退出:', details);
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
     logger.info('主窗口已关闭');
@@ -54,4 +60,3 @@ export function getMainWindow(): BrowserWindow | null {
 }
 
 export { loadFallbackContent };
-

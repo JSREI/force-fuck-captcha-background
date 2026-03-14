@@ -61,8 +61,10 @@ const rendererConfig = {
     static: {
       directory: path.join(__dirname, 'dist'),
     },
+    host: '127.0.0.1',
     port: 9000,
     hot: true,
+    allowedHosts: 'all',
     devMiddleware: {
       writeToDisk: true,
     },
