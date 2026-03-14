@@ -1,6 +1,19 @@
 # Captcha Background SDK (TypeScript)
 
-> 目前优先提供本地还原（Local Restore）能力，后续会继续补齐与 Python SDK 对齐的 API 面。
+> TypeScript SDK 通过 Python SDK 作为底层实现，保证能力对齐。
+
+## 依赖
+
+- Node.js >= 18
+- Python 3（可执行命令默认为 `python3`）
+- 本仓库内的 `python-sdk/`（或已 `pip install captcha-background-sdk`）
+
+如需指定 Python 路径：
+
+```bash
+export CAPTCHA_SDK_PYTHON_BIN=python3
+export CAPTCHA_SDK_PYTHONPATH=/absolute/path/to/python-sdk
+```
 
 ## 安装（本地开发）
 
@@ -16,24 +29,26 @@ import { CaptchaVisionSDK } from './dist';
 
 const sdk = new CaptchaVisionSDK();
 
-const summary = await sdk.runLocalRestore(
+// 本地还原
+const summary = await sdk.run_local_restore_dict(
   '/path/to/captchas',
   '/path/to/output',
-  {
-    clearOutputBeforeRun: true,
-    onProgress: (status) => {
-      console.log('progress', status.processedFiles, '/', status.imageFiles);
-    }
-  }
+  true
 );
 
-console.log(summary);
+// 自动识别
+const auto = await sdk.recognize_auto_dict(
+  '/path/to/captcha.png',
+  '/path/to/backgrounds'
+);
+
+console.log(summary, auto);
 ```
 
-## 已支持能力
+## 已封装 API
 
-- 本地还原（runLocalRestore / runLocalRestoreDict）
+- `CaptchaVisionSDK`（对齐 Python SDK 的公开方法）
+- `CaptchaTextLocator`
+- `CaptchaGapLocator`
 
-## 计划补齐
-
-- 与 Python SDK 对齐的 background index / text / slider 等能力
+说明：`CaptchaVisionSDK` 的所有方法会调用 Python SDK，保持行为一致。

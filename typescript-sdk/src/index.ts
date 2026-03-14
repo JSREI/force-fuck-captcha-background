@@ -1,4 +1,9 @@
 export * from './types';
-export { CaptchaVisionSDK, runLocalRestore } from './sdk';
+export {
+  CaptchaVisionSDK,
+  CaptchaTextLocator,
+  CaptchaGapLocator,
+  runLocalRestore
+} from './sdk';
 
 export const CaptchaRecognizer = CaptchaVisionSDK;
