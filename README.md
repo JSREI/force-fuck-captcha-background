@@ -2,11 +2,12 @@
 
 在线官网: https://jsrei.github.io/force-fuck-captcha-background/
 
-这个仓库当前分为三部分：
+这个仓库当前分为四部分：
 
 1. Electron UI 桌面端界面（`electron-ui/`）
 2. Python SDK（`python-sdk/`，发布到 PyPI）
-3. 文档网站（`doc-website/`，GitHub Pages 部署）
+3. TypeScript SDK（`typescript-sdk/`）
+4. 文档网站（`doc-website/`，GitHub Pages 部署）
 
 ## 目录划分
 
@@ -14,6 +15,7 @@
 .
 ├── electron-ui/     # Electron + React 桌面端界面
 ├── python-sdk/      # Python SDK（背景映射 + 字体定位）
+├── typescript-sdk/  # TypeScript SDK（本地还原能力）
 ├── doc-website/     # VitePress 文档站（GitHub Pages）
 └── README.md
 ```
@@ -45,7 +47,13 @@
 - pip install -r requirements.txt
 - python examples/demo.py
 
-### 4) 文档站（VitePress）
+### 4) 使用 TypeScript SDK
+
+- cd typescript-sdk
+- npm install
+- npm run build
+
+### 5) 文档站（VitePress）
 
 - cd doc-website
 - npm install
