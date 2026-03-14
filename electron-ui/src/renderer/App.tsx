@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Button, Card, Col, Divider, List, Menu, Row, Space, Steps, Tag, Typography } from 'antd';
+import { Alert, Button, Col, Divider, List, Menu, Row, Space, Steps, Tag, Typography } from 'antd';
 import './App.css';
 import AppLayout from './components/AppLayout';
 import DirectoryActionPanel from './components/local-restore/DirectoryActionPanel';
@@ -8,6 +8,8 @@ import RunSummaryPanel from './components/local-restore/RunSummaryPanel';
 import RunHistoryPanel from './components/local-restore/RunHistoryPanel';
 import { statusColorMap } from './modules/local-restore/constants';
 import { useLocalRestoreController } from './modules/local-restore/useLocalRestoreController';
+import bucketFlowImage from './assets/same-bucket-flow.png';
+import restoreFlowImage from './assets/background-restore-flow.svg';
 
 const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
@@ -34,12 +36,6 @@ const App: React.FC = () => {
     handleRestoreHistory,
     handleOpenHistoryOutput
   } = useLocalRestoreController();
-
-  const docLinks = [
-    { title: '快速开始', href: '#quick-start', desc: '3-5 分钟完成首轮背景还原' },
-    { title: 'SDK 能力', href: '#sdk', desc: '批量处理、映射输出与定位流程' },
-    { title: '核心能力', href: '#features', desc: '覆盖全链路能力概览' }
-  ];
 
   const deliverables = [
     { title: '背景图集合', desc: '每组背景图与投票结果统计' },
@@ -100,6 +96,21 @@ const App: React.FC = () => {
     '离线安全处理'
   ];
 
+  const principles = [
+    {
+      title: '同类样本归并',
+      desc: '通过四角像素快速分桶，确保相同背景进入同一组，减少噪声干扰。',
+      image: bucketFlowImage,
+      alt: '同类样本归并示意图'
+    },
+    {
+      title: '像素投票还原',
+      desc: '对每组样本做逐像素投票，生成可复用的纯净背景图。',
+      image: restoreFlowImage,
+      alt: '背景还原流程示意图'
+    }
+  ];
+
   const renderHome = () => (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <section className="hero" id="overview">
@@ -122,39 +133,45 @@ const App: React.FC = () => {
             <Tag>TypeScript + React + Ant Design</Tag>
           </div>
         </div>
-        <div className="hero-panel">
-          <Card className="hero-card" bordered={false}>
-            <Title level={4} className="card-title">文档导航</Title>
-            <List
-              size="small"
-              className="hero-list"
-              dataSource={docLinks}
-              renderItem={(item) => (
-                <List.Item>
-                  <Space direction="vertical" size={0}>
-                    <a href={item.href}>{item.title}</a>
-                    <Text type="secondary">{item.desc}</Text>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Card>
-          <Card className="hero-card" bordered={false}>
-            <Title level={4} className="card-title">关键产出</Title>
-            <List
-              size="small"
-              dataSource={deliverables}
-              renderItem={(item) => (
-                <List.Item>
-                  <Space direction="vertical" size={0}>
-                    <Text strong>{item.title}</Text>
-                    <Text type="secondary">{item.desc}</Text>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Card>
+      </section>
+
+      <section id="principles" className="section">
+        <div className="section-header">
+          <Title level={3} className="section-title">工作原理</Title>
+          <Text type="secondary">从归并到还原，核心流程清晰可解释。</Text>
         </div>
+        <Row gutter={[16, 16]}>
+          {principles.map((item) => (
+            <Col xs={24} lg={12} key={item.title}>
+              <div className="flat-card principle-card">
+                <div className="principle-media">
+                  <img src={item.image} alt={item.alt} className="principle-image" />
+                </div>
+                <div className="principle-body">
+                  <Title level={5} className="feature-title">{item.title}</Title>
+                  <Text className="feature-desc">{item.desc}</Text>
+                </div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </section>
+
+      <section id="deliverables" className="section">
+        <div className="section-header">
+          <Title level={3} className="section-title">关键产出</Title>
+          <Text type="secondary">每次任务都会生成可追踪的结果与指标。</Text>
+        </div>
+        <Row gutter={[12, 12]}>
+          {deliverables.map((item) => (
+            <Col xs={24} md={8} key={item.title}>
+              <div className="flat-card">
+                <Title level={5} className="feature-title">{item.title}</Title>
+                <Text className="feature-desc">{item.desc}</Text>
+              </div>
+            </Col>
+          ))}
+        </Row>
       </section>
 
       <section id="features" className="section">
@@ -165,10 +182,10 @@ const App: React.FC = () => {
         <Row gutter={[16, 16]}>
           {featureCards.map((item) => (
             <Col xs={24} sm={12} lg={6} key={item.title}>
-              <Card className="feature-card" bordered={false}>
+              <div className="flat-card feature-card">
                 <Title level={5} className="feature-title">{item.title}</Title>
                 <Text className="feature-desc">{item.desc}</Text>
-              </Card>
+              </div>
             </Col>
           ))}
         </Row>
@@ -181,17 +198,17 @@ const App: React.FC = () => {
         </div>
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card className="process-card" bordered={false}>
+            <div className="flat-card process-card">
               <Title level={4} className="card-title">推荐流程</Title>
               <Steps direction="vertical" size="small">
                 {quickStartSteps.map((step) => (
                   <Step key={step.title} title={step.title} description={step.desc} />
                 ))}
               </Steps>
-            </Card>
+            </div>
           </Col>
           <Col xs={24} lg={12}>
-            <Card className="highlight-card" bordered={false}>
+            <div className="flat-card highlight-card">
               <Title level={4} className="card-title">本地开发提示</Title>
               <Space direction="vertical" size="small">
                 <Text>前端入口：<Text code>electron-ui/src/renderer/App.tsx</Text></Text>
@@ -199,7 +216,7 @@ const App: React.FC = () => {
                 <Text>桌面端联调：<Text code>npm run dev</Text></Text>
                 <Text type="secondary">更多细节可在项目 README 中查看。</Text>
               </Space>
-            </Card>
+            </div>
           </Col>
         </Row>
       </section>
@@ -211,7 +228,7 @@ const App: React.FC = () => {
         </div>
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
-            <Card bordered={false} className="feature-card">
+            <div className="flat-card feature-card">
               <Title level={4} className="card-title">你会获得什么</Title>
               <List
                 className="plain-list"
@@ -222,10 +239,10 @@ const App: React.FC = () => {
                   </List.Item>
                 )}
               />
-            </Card>
+            </div>
           </Col>
           <Col xs={24} lg={10}>
-            <Card bordered={false} className="feature-card">
+            <div className="flat-card feature-card">
               <Title level={4} className="card-title">适用场景</Title>
               <div className="section-tags">
                 {scenarioTags.map((tag) => (
@@ -236,7 +253,7 @@ const App: React.FC = () => {
               <Text type="secondary">
                 需要更细粒度的接口说明时，可在源码目录中查阅 SDK README 与示例脚本。
               </Text>
-            </Card>
+            </div>
           </Col>
         </Row>
       </section>
@@ -250,7 +267,7 @@ const App: React.FC = () => {
           <Title level={3} className="section-title">工作区</Title>
           <Text type="secondary">选择输入与输出目录，直接开始本地合并与还原。</Text>
         </div>
-        <Card className="local-restore-card" bordered={false}>
+        <div className="flat-card local-restore-card">
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <DirectoryActionPanel
               inputDir={inputDir}
@@ -284,7 +301,7 @@ const App: React.FC = () => {
               onOpenOutput={handleOpenHistoryOutput}
             />
           </Space>
-        </Card>
+        </div>
       </section>
     </Space>
   );

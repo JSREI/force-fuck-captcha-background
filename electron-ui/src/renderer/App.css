@@ -12,12 +12,12 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  grid-template-columns: 1fr;
   gap: 24px;
   padding: 24px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #f5f9ff 0%, #ffffff 60%);
-  border: 1px solid #e6f0ff;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
 }
 
 .hero-content {
@@ -46,18 +46,6 @@
   gap: 8px;
 }
 
-.hero-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.hero-card {
-  border-radius: 12px;
-  border: 1px solid #eef1f6;
-  background: #ffffff;
-}
-
 .card-title {
   margin-bottom: 12px !important;
 }
@@ -78,13 +66,6 @@
   margin-bottom: 16px;
 }
 
-.feature-card {
-  height: 100%;
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  background: #ffffff;
-}
-
 .feature-title {
   margin-bottom: 8px !important;
 }
@@ -93,32 +74,62 @@
   color: #5a6a7b;
 }
 
-.process-card {
-  border-radius: 12px;
-  background: #f9fbff;
-  border: 1px solid #e6f0ff;
-}
-
-.highlight-card {
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px dashed #d6e4ff;
-}
-
 .section-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.local-restore-card {
-  border-radius: 12px;
+.flat-card {
+  height: 100%;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e9edf3;
   background: #ffffff;
-  border: 1px solid #f0f0f0;
+}
+
+.feature-card,
+.process-card,
+.highlight-card,
+.local-restore-card {
+  background: #ffffff;
+}
+
+.principle-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.principle-media {
+  background: #f6f8fb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.principle-image {
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.principle-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 @media (max-width: 992px) {
   .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .principle-card {
     grid-template-columns: 1fr;
   }
 }
@@ -136,4 +147,3 @@
     font-size: 24px !important;
   }
 }
-
