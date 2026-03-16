@@ -1,4 +1,4 @@
-name: Deploy Docs (VitePress)
+name: Deploy Website (GitHub Pages)
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: docs-pages
+  group: website-pages
   cancel-in-progress: true
 
 jobs:
@@ -33,22 +33,22 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: doc-website/package-lock.json
+          cache-dependency-path: website/package-lock.json
 
-      - name: Install docs dependencies
+      - name: Install website dependencies
         run: npm ci
-        working-directory: doc-website
+        working-directory: website
 
-      - name: Build VitePress
+      - name: Build Website
         env:
-          VITEPRESS_BASE: /force-fuck-captcha-background/
-        run: npm run docs:build
-        working-directory: doc-website
+          VITE_BASE: /force-fuck-captcha-background/
+        run: npm run build
+        working-directory: website
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: doc-website/.vitepress/dist
+          path: website/dist
 
   deploy:
     needs: build

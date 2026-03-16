@@ -23,16 +23,16 @@ case "$TARGET" in
     HEALTH_PATH="/health"
     API_PATH="/api"
     ;;
-  doc-website|docs|website)
-    APP_DIR="$ROOT_DIR/doc-website"
-    APP_NAME="${APP_NAME:-force-captcha-docs}"
-    RUN_SCRIPT="docs:dev"
+  website)
+    APP_DIR="$ROOT_DIR/website"
+    APP_NAME="${APP_NAME:-force-captcha-website}"
+    RUN_SCRIPT="dev"
     RUN_ARGS=(--host 127.0.0.1 --port)
-    PORT_FILE="$ROOT_DIR/.codex-service-port-docs"
+    PORT_FILE="$ROOT_DIR/.codex-service-port-website"
     PROBE_PATH="/"
     ;;
   *)
-    echo "ERROR: Unknown START_SERVICE_TARGET '$TARGET' (expected: electron-ui | doc-website)"
+    echo "ERROR: Unknown START_SERVICE_TARGET '$TARGET' (expected: electron-ui | website)"
     exit 1
     ;;
 esac

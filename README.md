@@ -7,7 +7,7 @@
 1. Electron UI 桌面端界面（`electron-ui/`）
 2. Python SDK（`python-sdk/`，发布到 PyPI）
 3. TypeScript SDK（`typescript-sdk/`）
-4. 文档网站（`doc-website/`，GitHub Pages 部署）
+4. 官网站点（`website/`，GitHub Pages 部署）
 
 ## 目录划分
 
@@ -16,7 +16,7 @@
 ├── electron-ui/     # Electron + React 桌面端界面
 ├── python-sdk/      # Python SDK（背景映射 + 字体定位）
 ├── typescript-sdk/  # TypeScript SDK（本地还原能力）
-├── doc-website/     # VitePress 文档站（GitHub Pages）
+├── website/         # React + Vite 官网（GitHub Pages）
 └── README.md
 ```
 
@@ -53,17 +53,17 @@
 - npm install
 - npm run build
 
-### 5) 文档站（VitePress）
+### 5) 官网站点（React + Vite）
 
-- cd doc-website
+- cd website
 - npm install
-- npm run docs:dev
+- npm run dev
 
 构建静态站点：
 
-- cd doc-website
-- npm run docs:build
+- cd website
+- npm run build
 
-文档部署由 GitHub Actions 自动执行（GitHub Pages）：
-- 工作流：`.github/workflows/docs-pages.yml`
+站点部署由 GitHub Actions 自动执行（GitHub Pages）：
+- 工作流：`.github/workflows/website-pages.yml`
 - 触发：`push main`、`release published`、`workflow_dispatch`
