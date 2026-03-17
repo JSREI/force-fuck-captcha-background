@@ -85,7 +85,6 @@ export async function exportFontGlyphImages(
     stats: {
       glyph_count: exported.length,
       exported_count: exported.length,
-      render_mode: normalizedMode,
     },
   };
 }
